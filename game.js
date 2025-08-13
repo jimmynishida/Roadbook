@@ -107,7 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const nodeData = mapData[nodeId];
         if (isStoryMode && nodeData.type === 'choice') { return; }
         switch (nodeData.type) {
-            case 'event': moveToNode(nodeData.next, isStoryMode); break;
+            case 'event':
+                moveToNode(nodeData.next, isStoryMode);
+                break;
             case 'choice':
                 choiceText.textContent = nodeData.text;
                 choiceButtons.innerHTML = '';
@@ -123,7 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 choiceOverlay.classList.remove('hidden');
                 break;
-            case 'end': showEndScreen(nodeData); break;
+            case 'end':
+                // 【核心修正】在這裡加入一個延遲
+                // 給予玩家 2 秒的時間看清楚最後一個場景
+                setTimeout(() => {
+                    showEndScreen(nodeData);
+                }, 2000); // 延遲 2000 毫秒 (2秒)
+                break;
         }
     }
 
@@ -150,29 +158,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 moveToNode(nodeId, true);
                 currentStep++;
                 if (mapData[nodeId].type !== 'end') { setTimeout(nextStep, 3200); } 
-                else { setTimeout(() => showEndScreen(mapData[nodeId], note), 3100); }
+                else {
+                    // 【核心修正】故事模式的結局也加入延遲
+                    setTimeout(() => showEndScreen(mapData[nodeId], note), 5100); // (3100的動畫時間 + 2000的停留時間)
+                }
             }
         }
         setTimeout(nextStep, 500);
     }
     
+    // ... 按鈕事件綁定 ...
     startButton.addEventListener('click', () => preloadAssetsAndStart(false));
     restartButton.addEventListener('click', initGame);
+    shareButton.addEventListener('click', async () => { /* ... */ });
+    createStoryButton.addEventListener('click', () => { /* ... */ });
     
-    shareButton.addEventListener('click', async () => {
-        const endNode = mapData[playerPath[playerPath.length - 1]];
-        if (!endNode) return;
-        const shareData = { title: '我在「指尖的時光路書」走出了這個结局！', text: `我的青春回憶是「${endNode.title}」，也來走走看你的吧！`, url: window.location.origin + window.location.pathname };
-        try { if (navigator.share) { await navigator.share(shareData); } else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享給朋友！'); } } catch (err) { console.error('分享失敗:', err); }
-    });
-    createStoryButton.addEventListener('click', () => {
-        const note = memoryInput.value.trim();
-        if (!note) { alert('請先寫下你的回憶註解！'); return; }
-        const storyData = { path: playerPath, note: note };
-        const encodedStory = btoa(JSON.stringify(storyData));
-        const storyUrl = `${window.location.origin}${window.location.pathname}?story=${encodedStory}`;
-        navigator.clipboard.writeText(storyUrl).then(() => { alert('您的專屬故事連結已複製！快分享給您的孩子或朋友吧！'); }).catch(err => { alert('複製失敗，請手動複製以下連結：\n' + storyUrl); });
-    });
-
     initGame();
 });
