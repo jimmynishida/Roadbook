@@ -1,0 +1,20 @@
+#scroll-map {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    
+    /* 【核心修改】使用您的插畫作為背景 */ㄋ
+    background-image: url('https://i.imgur.com/KjdL4mK.jpg');
+    
+    /* 讓背景圖完整顯示在容器內，可能會留白 */
+    background-size: contain; 
+    
+    /* 背景圖不重複 */
+    background-repeat: no-repeat; 
+    
+    /* 將背景圖錨定在頂部中央 */
+    background-position: top center; 
+    
+    /* 為了讓圖片質感更好，可以保留一個淡淡的底色 */
+    background-color: #fdf5e6;
+}
