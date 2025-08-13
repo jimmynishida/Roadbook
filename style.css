@@ -3,7 +3,7 @@
     width: 100%;
     top: 0;
     
-    /* 【核心修改】使用您的插畫作為背景 */ㄋ
+    /* 【核心修改】使用您的插畫作為背景 */
     background-image: url('map-background.jpg');
     
     /* 讓背景圖完整顯示在容器內，可能會留白 */
