@@ -1,7 +1,5 @@
-// 等待網頁所有元素載入完成後再執行
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- 獲取所有需要的畫面元素 (此處不變) ---
     const startScreen = document.getElementById('start-screen');
     const gameArea = document.getElementById('game-area');
     const endScreen = document.getElementById('end-screen');
@@ -16,24 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const createStoryButton = document.getElementById('create-story-button');
     const memoryNoteArea = document.getElementById('memory-note-area');
 
-    // --- 【核心修改】遊戲地圖資料 ---
-    // y 座標現在對應背景圖上的垂直位置
-    // 我們將使用這張圖本身來講故事
     const mapData = {
         'start':     { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門',     next: 'choice1' },
         'choice1':   { type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？',
-            choices: [
-                { text: '去左邊的「柑仔店」', target: 'gamadim' },
-                { text: '去右邊的「電動間」', target: 'arcade' }
-            ]
+            choices: [ { text: '去左邊的「柑仔店」', target: 'gamadim' }, { text: '去右邊的「電動間」', target: 'arcade' } ]
         },
         'gamadim':   { type: 'event',  pos: { x: 30, y: 65 }, text: '在柑仔店買了零食',   next: 'choice2' },
         'arcade':    { type: 'event',  pos: { x: 70, y: 55 }, text: '在電動間打遊戲',    next: 'choice2' },
         'choice2':   { type: 'choice', pos: { x: 50, y: 45 }, text: '天色晚了，回家吧...',
-            choices: [
-                { text: '走大路回家', target: 'mainroad' },
-                { text: '跟朋友在大樹下道別', target: 'tree' }
-            ]
+            choices: [ { text: '走大馬路回家', target: 'mainroad' }, { text: '跟朋友在大樹下道別', target: 'tree' } ]
         },
         'mainroad':  { type: 'event',  pos: { x: 65, y: 25 }, text: '走大路回家',       next: 'end_home' },
         'tree':      { type: 'event',  pos: { x: 70, y: 35 }, text: '在大樹下玩耍道別',     next: 'end_friends' },
@@ -41,17 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
         'end_friends': { type: 'end', pos: { x: 75, y: 15 }, title: '難忘的友誼', description: '青春最棒的，就是有個能陪你一起在路燈下聊天的朋友。那些無聊又閃亮的夜晚，構成了我們的少年時代。', img: 'https://i.imgur.com/gW3L3Yg.jpg' }
     };
 
-    // 【核心修改】地圖高度調整，以匹配圖片的長寬比 (圖片約 700x1500)
-    const MAP_HEIGHT = 2800; 
+    const MAP_HEIGHT = 2800;
     let playerPath = [];
 
-    // --- 遊戲初始化函式 ---
     function initGame() {
         playerPath = [];
         scrollMap.innerHTML = '';
         scrollMap.style.transition = 'none';
         
-        // 繪製節點
         scrollMap.style.height = `${MAP_HEIGHT}px`;
         for (const nodeId in mapData) {
             const nodeData = mapData[nodeId];
@@ -60,57 +46,53 @@ document.addEventListener('DOMContentLoaded', () => {
             nodeElement.id = `node-${nodeId}`;
             nodeElement.style.left = `${nodeData.pos.x}%`;
             nodeElement.style.top = `${nodeData.pos.y}%`;
-            
-            // 【核心修改】我們不再需要顯示圖示和文字，只保留一個可點擊的熱區
-            // 所以 innerHTML 保持為空，但可以給它一個大小方便觸發
-            nodeElement.style.width = '100px';
-            nodeElement.style.height = '100px';
-            
             scrollMap.appendChild(nodeElement);
         }
 
-        // ... (後續流程不變，直接複製即可)
-        startScreen.classList.add('hidden');
+        gameArea.classList.add('hidden');
         endScreen.classList.add('hidden');
-        gameArea.classList.remove('hidden');
+        startScreen.classList.remove('hidden'); // 確保每次都從開始畫面開始
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('story')) {
             const storyData = JSON.parse(atob(urlParams.get('story')));
             playStoryMode(storyData);
-        } else {
-            memoryNoteArea.style.display = 'flex';
-            const startNode = mapData['start'];
-            const initialY = (startNode.pos.y / 100 * MAP_HEIGHT) - (window.innerHeight * 0.85);
-            scrollMap.style.transform = `translateY(-${initialY}px)`;
-            setTimeout(() => {
-                moveToNode('start');
-            }, 500);
         }
     }
 
-    // --- 移動和節點處理邏輯 (此處不變) ---
+    function startGame() {
+        startScreen.classList.add('hidden');
+        gameArea.classList.remove('hidden');
+
+        const startNode = mapData['start'];
+        const initialY = (startNode.pos.y / 100 * MAP_HEIGHT) - (window.innerHeight * 0.85);
+        scrollMap.style.transform = `translateY(-${initialY}px)`;
+        setTimeout(() => {
+            moveToNode('start');
+        }, 500);
+    }
+    
     function moveToNode(nodeId, isStoryMode = false) {
         if (!isStoryMode) { playerPath.push(nodeId); }
         const nodeData = mapData[nodeId];
+        if (!nodeData) {
+            console.error("錯誤：找不到節點資料 for ID:", nodeId);
+            return;
+        }
         const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
         const scrollAmount = targetY - (window.innerHeight * 0.85);
         scrollMap.style.transition = 'transform 3s ease-in-out';
         scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
-        setTimeout(() => { handleNodeType(nodeData, isStoryMode); }, 3100);
+        setTimeout(() => { handleNodeType(nodeId, isStoryMode); }, 3100);
     }
 
-    function handleNodeType(nodeData, isStoryMode = false) {
+    function handleNodeType(nodeId, isStoryMode = false) {
+        const nodeData = mapData[nodeId];
         if (isStoryMode && nodeData.type === 'choice') { return; }
+
         switch (nodeData.type) {
             case 'event':
-                // 到達事件點後，直接顯示下一個選擇，而不是等待
-                const nextNode = mapData[nodeData.next];
-                if(nextNode.type === 'choice'){
-                    handleNodeType(nextNode, isStoryMode);
-                } else {
-                    setTimeout(() => moveToNode(nodeData.next, isStoryMode), 1500);
-                }
+                moveToNode(nodeData.next, isStoryMode);
                 break;
             case 'choice':
                 choiceText.textContent = nodeData.text;
@@ -133,56 +115,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-   // --- 結局畫面顯示 (【核心修正】增加健壯性與除錯訊息) ---
-function showEndScreen(endNode, customNote = null) {
-    // 【除錯】在控制台印出收到的資料，方便我們檢查
-    console.log("抵達結局，收到的節點資料是:", endNode);
+    function showEndScreen(endNode, customNote = null) {
+        const title = endNode?.title ?? '旅程的一個終點';
+        const description = customNote || (endNode?.description ?? '每一段回憶，都值得珍藏。');
+        const imageUrl = endNode?.img ?? 'https://i.imgur.com/gW3L3Yg.jpg';
 
-    // 使用 "Optional Chaining (?.)" 和 "Nullish Coalescing (??)" 來讓程式更安全
-    // 即使 endNode 或其屬性不存在，也不會報錯，而是使用預設值
-    const title = endNode?.title ?? '旅程的一個終點';
-    const description = customNote || (endNode?.description ?? '每一段回憶，都值得珍藏。');
-    const imageUrl = endNode?.img ?? 'https://i.imgur.com/gW3L3Yg.jpg'; // 提供一個預設圖片
-
-    // 填入內容
-    document.getElementById('end-title').textContent = title;
-    document.getElementById('end-description').textContent = description;
-    document.getElementById('end-image-container').innerHTML = `<img src="${imageUrl}" alt="${title}">`;
-
-    // 切換畫面
-    gameArea.classList.add('hidden');
-    endScreen.classList.remove('hidden');
-}
+        document.getElementById('end-title').textContent = title;
+        document.getElementById('end-description').textContent = description;
+        document.getElementById('end-image-container').innerHTML = `<img src="${imageUrl}" alt="${title}">`;
+        
+        gameArea.classList.add('hidden');
+        endScreen.classList.remove('hidden');
+    }
 
     function playStoryMode(storyData) {
+        startScreen.classList.add('hidden');
+        gameArea.classList.remove('hidden');
+        memoryNoteArea.style.display = 'none';
+
         const { path, note } = storyData;
         let currentStep = 0;
-        memoryNoteArea.style.display = 'none';
+        
         const initialY = (mapData[path[0]].pos.y / 100 * MAP_HEIGHT) - (window.innerHeight * 0.85);
         scrollMap.style.transform = `translateY(-${initialY}px)`;
+        
         function nextStep() {
             if (currentStep < path.length) {
                 const nodeId = path[currentStep];
                 const nodeData = mapData[nodeId];
                 moveToNode(nodeId, true);
                 currentStep++;
-                if (nodeData.type !== 'end') { setTimeout(nextStep, 5100); } 
+                if (nodeData.type !== 'end') { setTimeout(nextStep, 3200); } 
                 else { setTimeout(() => showEndScreen(nodeData, note), 3100); }
             }
         }
         setTimeout(nextStep, 500);
     }
     
-    // --- 按鈕事件綁定 (此處不變) ---
-    startButton.addEventListener('click', initGame);
-    restartButton.addEventListener('click', () => {
-        endScreen.classList.add('hidden');
-        startScreen.classList.remove('hidden');
-    });
+    // --- 按鈕事件綁定 ---
+    startButton.addEventListener('click', startGame);
+    restartButton.addEventListener('click', initGame);
+
     shareButton.addEventListener('click', async () => {
         const endNode = mapData[playerPath[playerPath.length - 1]];
+        if (!endNode) return;
         const shareData = {
-            title: '我在「指尖的時光路書」走出了這個結局！',
+            title: '我在「指尖的時光路書」走出了這個结局！',
             text: `我的青春回憶是「${endNode.title}」，也來走走看你的吧！`,
             url: window.location.origin + window.location.pathname
         };
@@ -191,6 +169,7 @@ function showEndScreen(endNode, customNote = null) {
             else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享給朋友！'); }
         } catch (err) { console.error('分享失敗:', err); }
     });
+
     createStoryButton.addEventListener('click', () => {
         const note = memoryInput.value.trim();
         if (!note) { alert('請先寫下你的回憶註解！'); return; }
@@ -201,4 +180,7 @@ function showEndScreen(endNode, customNote = null) {
             alert('您的專屬故事連結已複製！快分享給您的孩子或朋友吧！');
         }).catch(err => { alert('複製失敗，請手動複製以下連結：\n' + storyUrl); });
     });
+
+    // --- 遊戲啟動 ---
+    initGame();
 });
