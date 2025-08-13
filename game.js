@@ -133,14 +133,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- 結局和故事模式函式 (此處不變) ---
-    function showEndScreen(endNode, customNote = null) {
-        document.getElementById('end-title').textContent = endNode.title;
-        document.getElementById('end-description').textContent = customNote || endNode.description;
-        document.getElementById('end-image-container').innerHTML = `<img src="${endNode.img}" alt="${endNode.title}">`;
-        gameArea.classList.add('hidden');
-        endScreen.classList.remove('hidden');
-    }
+   // --- 結局畫面顯示 (【核心修正】增加健壯性與除錯訊息) ---
+function showEndScreen(endNode, customNote = null) {
+    // 【除錯】在控制台印出收到的資料，方便我們檢查
+    console.log("抵達結局，收到的節點資料是:", endNode);
+
+    // 使用 "Optional Chaining (?.)" 和 "Nullish Coalescing (??)" 來讓程式更安全
+    // 即使 endNode 或其屬性不存在，也不會報錯，而是使用預設值
+    const title = endNode?.title ?? '旅程的一個終點';
+    const description = customNote || (endNode?.description ?? '每一段回憶，都值得珍藏。');
+    const imageUrl = endNode?.img ?? 'https://i.imgur.com/gW3L3Yg.jpg'; // 提供一個預設圖片
+
+    // 填入內容
+    document.getElementById('end-title').textContent = title;
+    document.getElementById('end-description').textContent = description;
+    document.getElementById('end-image-container').innerHTML = `<img src="${imageUrl}" alt="${title}">`;
+
+    // 切換畫面
+    gameArea.classList.add('hidden');
+    endScreen.classList.remove('hidden');
+}
 
     function playStoryMode(storyData) {
         const { path, note } = storyData;
