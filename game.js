@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- 元素獲取 ---
     const startScreen = document.getElementById('start-screen');
     const loadingScreen = document.getElementById('loading-screen');
     const gameArea = document.getElementById('game-area');
@@ -18,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const createStoryButton = document.getElementById('create-story-button');
     const memoryNoteArea = document.getElementById('memory-note-area');
 
-    // --- 地圖資料 ---
     const mapData = {
         'start':     { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門',     next: 'choice1' },
         'choice1':   { type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？',
@@ -37,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAP_HEIGHT = 2800;
     let playerPath = [];
 
-    // --- 畫面管理器 ---
     function showScreen(screenId) {
         allScreens.forEach(screen => {
             if (screen.id === screenId) {
@@ -52,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerPath = [];
         scrollMap.innerHTML = '';
         scrollMap.style.transition = 'none';
-
+        
         scrollMap.style.height = `${MAP_HEIGHT}px`;
         for (const nodeId in mapData) {
             const nodeElement = document.createElement('div');
@@ -61,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nodeElement.style.top = `${mapData[nodeId].pos.y}%`;
             scrollMap.appendChild(nodeElement);
         }
-
+        
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('story')) {
             preloadAssetsAndStart(true, JSON.parse(atob(urlParams.get('story'))));
@@ -94,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollMap.style.transform = `translateY(-${initialY}px)`;
         setTimeout(() => moveToNode('start'), 500);
     }
-
+    
     function moveToNode(nodeId, isStoryMode = false) {
         if (!isStoryMode) { playerPath.push(nodeId); }
         const nodeData = mapData[nodeId];
@@ -158,11 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setTimeout(nextStep, 500);
     }
-
-    // --- 按鈕事件綁定 ---
+    
     startButton.addEventListener('click', () => preloadAssetsAndStart(false));
     restartButton.addEventListener('click', initGame);
-
+    
     shareButton.addEventListener('click', async () => {
         const endNode = mapData[playerPath[playerPath.length - 1]];
         if (!endNode) return;
@@ -178,6 +174,5 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.clipboard.writeText(storyUrl).then(() => { alert('您的專屬故事連結已複製！快分享給您的孩子或朋友吧！'); }).catch(err => { alert('複製失敗，請手動複製以下連結：\n' + storyUrl); });
     });
 
-    // --- 遊戲啟動 ---
     initGame();
 });
