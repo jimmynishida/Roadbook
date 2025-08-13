@@ -1,7 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // 【核心修改】增加 loadingScreen 元素
+    const loadingScreen = document.getElementById('loading-screen');
     const startScreen = document.getElementById('start-screen');
     const gameArea = document.getElementById('game-area');
+    // ... 其他元素獲取不變 ...
     const endScreen = document.getElementById('end-screen');
     const startButton = document.getElementById('start-button');
     const restartButton = document.getElementById('restart-button');
@@ -14,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const createStoryButton = document.getElementById('create-story-button');
     const memoryNoteArea = document.getElementById('memory-note-area');
 
+
+    // mapData 和 MAP_HEIGHT 不變...
     const mapData = {
         'start':     { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門',     next: 'choice1' },
         'choice1':   { type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？',
@@ -29,9 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'end_home':    { type: 'end', pos: { x: 60, y: 10 }, title: '溫暖的晚餐', description: '雖然平凡，但家裡的飯菜香和等待的燈光，就是一天中最安穩的時刻。這是最簡單的幸福。', img: 'https://i.imgur.com/FqA8sXv.jpg' },
         'end_friends': { type: 'end', pos: { x: 75, y: 15 }, title: '難忘的友誼', description: '青春最棒的，就是有個能陪你一起在路燈下聊天的朋友。那些無聊又閃亮的夜晚，構成了我們的少年時代。', img: 'https://i.imgur.com/gW3L3Yg.jpg' }
     };
-
     const MAP_HEIGHT = 2800;
     let playerPath = [];
+
 
     function initGame() {
         playerPath = [];
@@ -49,21 +54,43 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollMap.appendChild(nodeElement);
         }
 
+        loadingScreen.classList.add('hidden');
         gameArea.classList.add('hidden');
         endScreen.classList.add('hidden');
-        startScreen.classList.remove('hidden'); // 確保每次都從開始畫面開始
+        startScreen.classList.remove('hidden');
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('story')) {
-            const storyData = JSON.parse(atob(urlParams.get('story')));
-            playStoryMode(storyData);
+            preloadAssetsAndStart(true, JSON.parse(atob(urlParams.get('story'))));
         }
     }
 
-    function startGame() {
+    // 【核心修改】新的預載入函式
+    function preloadAssetsAndStart(isStory = false, storyData = null) {
         startScreen.classList.add('hidden');
-        gameArea.classList.remove('hidden');
+        loadingScreen.classList.remove('hidden');
 
+        const img = new Image();
+        img.src = 'map.jpg';
+
+        img.onload = () => {
+            console.log('背景圖載入完成!');
+            loadingScreen.classList.add('hidden');
+            if (isStory) {
+                playStoryMode(storyData);
+            } else {
+                startGame();
+            }
+        };
+
+        img.onerror = () => {
+            console.error('背景圖載入失敗!');
+            alert('抱歉，回憶載入失敗，請檢查網路連線後再試一次。');
+        };
+    }
+
+    function startGame() {
+        gameArea.classList.remove('hidden');
         const startNode = mapData['start'];
         const initialY = (startNode.pos.y / 100 * MAP_HEIGHT) - (window.innerHeight * 0.85);
         scrollMap.style.transform = `translateY(-${initialY}px)`;
@@ -72,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     }
     
+    // ... moveToNode, handleNodeType, showEndScreen, playStoryMode, 和其他分享按鈕的邏輯保持不變 ...
     function moveToNode(nodeId, isStoryMode = false) {
         if (!isStoryMode) { playerPath.push(nodeId); }
         const nodeData = mapData[nodeId];
@@ -129,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function playStoryMode(storyData) {
-        startScreen.classList.add('hidden');
         gameArea.classList.remove('hidden');
         memoryNoteArea.style.display = 'none';
 
@@ -152,10 +179,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(nextStep, 500);
     }
     
-    // --- 按鈕事件綁定 ---
-    startButton.addEventListener('click', startGame);
-    restartButton.addEventListener('click', initGame);
+    // 【核心修改】修改開始按鈕的行為
+    startButton.addEventListener('click', () => preloadAssetsAndStart(false));
 
+    // ... 其他按鈕綁定不變 ...
+    restartButton.addEventListener('click', initGame);
     shareButton.addEventListener('click', async () => {
         const endNode = mapData[playerPath[playerPath.length - 1]];
         if (!endNode) return;
@@ -169,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
             else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享給朋友！'); }
         } catch (err) { console.error('分享失敗:', err); }
     });
-
     createStoryButton.addEventListener('click', () => {
         const note = memoryInput.value.trim();
         if (!note) { alert('請先寫下你的回憶註解！'); return; }
