@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerPath = [];
         scrollMap.innerHTML = '';
         scrollMap.style.transition = 'none';
-        
+
         scrollMap.style.height = `${MAP_HEIGHT}px`;
         for (const nodeId in mapData) {
             const nodeElement = document.createElement('div');
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nodeElement.style.top = `${mapData[nodeId].pos.y}%`;
             scrollMap.appendChild(nodeElement);
         }
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('story')) {
             preloadAssetsAndStart(true, JSON.parse(atob(urlParams.get('story'))));
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollMap.style.transform = `translateY(-${initialY}px)`;
         setTimeout(() => moveToNode('start'), 500);
     }
-    
+
     function moveToNode(nodeId, isStoryMode = false) {
         if (!isStoryMode) { playerPath.push(nodeId); }
         const nodeData = mapData[nodeId];
@@ -106,16 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => handleNodeType(nodeId, isStoryMode), 3100);
     }
 
-    // --- 【核心修正】handleNodeType 邏輯優化 ---
     function handleNodeType(nodeId, isStoryMode = false) {
         const nodeData = mapData[nodeId];
         if (isStoryMode && nodeData.type === 'choice') { return; }
-
         switch (nodeData.type) {
-            case 'event':
-                // 不論下一個節點是什麼，都統一呼叫 moveToNode，確保流程一致
-                moveToNode(nodeData.next, isStoryMode);
-                break;
+            case 'event': moveToNode(nodeData.next, isStoryMode); break;
             case 'choice':
                 choiceText.textContent = nodeData.text;
                 choiceButtons.innerHTML = '';
@@ -131,9 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 choiceOverlay.classList.remove('hidden');
                 break;
-            case 'end':
-                showEndScreen(nodeData);
-                break;
+            case 'end': showEndScreen(nodeData); break;
         }
     }
 
@@ -157,20 +150,19 @@ document.addEventListener('DOMContentLoaded', () => {
         function nextStep() {
             if (currentStep < path.length) {
                 const nodeId = path[currentStep];
-                const nodeData = mapData[nodeId];
                 moveToNode(nodeId, true);
                 currentStep++;
-                if (nodeData.type !== 'end') { setTimeout(nextStep, 3200); } 
-                else { setTimeout(() => showEndScreen(nodeData, note), 3100); }
+                if (mapData[nodeId].type !== 'end') { setTimeout(nextStep, 3200); } 
+                else { setTimeout(() => showEndScreen(mapData[nodeId], note), 3100); }
             }
         }
         setTimeout(nextStep, 500);
     }
-    
+
     // --- 按鈕事件綁定 ---
     startButton.addEventListener('click', () => preloadAssetsAndStart(false));
     restartButton.addEventListener('click', initGame);
-    // ... 其他分享按鈕邏輯 ...
+
     shareButton.addEventListener('click', async () => {
         const endNode = mapData[playerPath[playerPath.length - 1]];
         if (!endNode) return;
