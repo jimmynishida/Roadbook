@@ -16,32 +16,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const createStoryButton = document.getElementById('create-story-button');
     const memoryNoteArea = document.getElementById('memory-note-area');
 
-    // --- 【修正一：擴充地圖資料】 ---
-    // 為需要在地圖上顯示的地點節點，增加 icon (圖示) 和 title (標題) 屬性
-    // 註：此處使用 placeholder 圖片做為範例，您可以替換成自己的圖檔連結
+    // --- 【核心修改】遊戲地圖資料 ---
+    // y 座標現在對應背景圖上的垂直位置
+    // 我們將使用這張圖本身來講故事
     const mapData = {
-        'start':     { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門',     next: 'choice1',     icon: 'https://placehold.co/75/8B4513/FFFFFF?text=校門', title: '校門口' },
+        'start':     { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門',     next: 'choice1' },
         'choice1':   { type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？',
             choices: [
                 { text: '去左邊的「柑仔店」', target: 'gamadim' },
                 { text: '去右邊的「電動間」', target: 'arcade' }
             ]
         },
-        'gamadim':   { type: 'event',  pos: { x: 30, y: 65 }, text: '在柑仔店買了零食',   next: 'choice2',     icon: 'https://placehold.co/75/D2691E/FFFFFF?text=柑仔店', title: '柑仔店' },
-        'arcade':    { type: 'event',  pos: { x: 70, y: 55 }, text: '在電動間打遊戲',    next: 'choice2',     icon: 'https://placehold.co/75/4682B4/FFFFFF?text=電動間', title: '電動間' },
+        'gamadim':   { type: 'event',  pos: { x: 30, y: 65 }, text: '在柑仔店買了零食',   next: 'choice2' },
+        'arcade':    { type: 'event',  pos: { x: 70, y: 55 }, text: '在電動間打遊戲',    next: 'choice2' },
         'choice2':   { type: 'choice', pos: { x: 50, y: 45 }, text: '天色晚了，回家吧...',
             choices: [
                 { text: '走大路回家', target: 'mainroad' },
                 { text: '跟朋友在大樹下道別', target: 'tree' }
             ]
         },
-        'mainroad':  { type: 'event',  pos: { x: 65, y: 25 }, text: '走大路回家',       next: 'end_home',    icon: 'https://placehold.co/75/696969/FFFFFF?text=大路', title: '回家的路' },
-        'tree':      { type: 'event',  pos: { x: 70, y: 35 }, text: '在大樹下玩耍道別',     next: 'end_friends', icon: 'https://placehold.co/75/228B22/FFFFFF?text=大樹', title: '大樹下' },
+        'mainroad':  { type: 'event',  pos: { x: 65, y: 25 }, text: '走大路回家',       next: 'end_home' },
+        'tree':      { type: 'event',  pos: { x: 70, y: 35 }, text: '在大樹下玩耍道別',     next: 'end_friends' },
         'end_home':    { type: 'end', pos: { x: 60, y: 10 }, title: '溫暖的晚餐', description: '雖然平凡，但家裡的飯菜香和等待的燈光，就是一天中最安穩的時刻。這是最簡單的幸福。', img: 'https://i.imgur.com/FqA8sXv.jpg' },
         'end_friends': { type: 'end', pos: { x: 75, y: 15 }, title: '難忘的友誼', description: '青春最棒的，就是有個能陪你一起在路燈下聊天的朋友。那些無聊又閃亮的夜晚，構成了我們的少年時代。', img: 'https://i.imgur.com/gW3L3Yg.jpg' }
     };
 
-    const MAP_HEIGHT = 2800;
+    // 【核心修改】地圖高度調整，以匹配圖片的長寬比 (圖片約 700x1500)
+    const MAP_HEIGHT = 2800; 
     let playerPath = [];
 
     // --- 遊戲初始化函式 ---
@@ -60,24 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
             nodeElement.style.left = `${nodeData.pos.x}%`;
             nodeElement.style.top = `${nodeData.pos.y}%`;
             
-            // --- 【修正二：恢復節點圖示與文字的生成】 ---
-            // 檢查節點是否有 icon 和 title 屬性，若有則建立圖片和文字元素
-            if (nodeData.icon && nodeData.title) {
-                const img = document.createElement('img');
-                img.src = nodeData.icon;
-                img.alt = nodeData.title; // alt 屬性有助於可訪問性
-
-                const p = document.createElement('p');
-                p.textContent = nodeData.title;
-
-                nodeElement.appendChild(img);
-                nodeElement.appendChild(p);
-            }
-            // (註解：對於沒有 icon 的節點，例如 'choice' 類型，它們將只是一個空的 div，在地圖上不可見，這是符合期望的)
+            // 【核心修改】我們不再需要顯示圖示和文字，只保留一個可點擊的熱區
+            // 所以 innerHTML 保持為空，但可以給它一個大小方便觸發
+            nodeElement.style.width = '100px';
+            nodeElement.style.height = '100px';
             
             scrollMap.appendChild(nodeElement);
         }
 
+        // ... (後續流程不變，直接複製即可)
         startScreen.classList.add('hidden');
         endScreen.classList.add('hidden');
         gameArea.classList.remove('hidden');
@@ -112,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isStoryMode && nodeData.type === 'choice') { return; }
         switch (nodeData.type) {
             case 'event':
+                // 到達事件點後，直接顯示下一個選擇，而不是等待
                 const nextNode = mapData[nodeData.next];
                 if(nextNode.type === 'choice'){
                     handleNodeType(nextNode, isStoryMode);
@@ -177,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     shareButton.addEventListener('click', async () => {
         const endNode = mapData[playerPath[playerPath.length - 1]];
         const shareData = {
-            title: '我在「指尖的時光路書」走出了這個结局！',
+            title: '我在「指尖的時光路書」走出了這個結局！',
             text: `我的青春回憶是「${endNode.title}」，也來走走看你的吧！`,
             url: window.location.origin + window.location.pathname
         };
