@@ -4,32 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>指尖的時光路書</title>
-    <link rel="preload" as="image" href="map.jpg">
-    <link rel="stylesheet" href="style.css?v=1.2">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div id="game-container">
-        <div id="loading-screen" class="screen hidden">
-            <div class="spinner"></div>
-            <p>回憶載入中...</p>
-        </div>
         <div id="start-screen" class="screen">
             <h1>指尖的時光路書</h1>
             <p class="subtitle">一段屬於我們的青春旅程</p>
             <p>那年放學後，你選擇走向哪裡？</p>
             <button id="start-button" class="btn">開始回憶</button>
         </div>
+
         <div id="game-area" class="hidden">
-            <div id="scroll-map"></div>
+            <div id="scroll-map">
+                </div>
             <div id="choice-overlay" class="hidden">
                 <p id="choice-text"></p>
-                <div id="choice-buttons"></div>
+                <div id="choice-buttons">
+                    </div>
             </div>
         </div>
+
         <div id="end-screen" class="screen hidden">
             <h2 id="end-title"></h2>
             <div id="end-image-container"></div>
             <p id="end-description"></p>
+
             <div id="social-area">
                 <button id="share-button" class="btn social-btn">分享我的結局</button>
                 <div id="memory-note-area">
@@ -38,9 +39,11 @@
                     <button id="create-story-button" class="btn social-btn">生成我的故事連結</button>
                 </div>
             </div>
+            
             <button id="restart-button" class="btn">再走一次青春路</button>
         </div>
     </div>
-    <script src="game.js?v=1.2"></script>
+
+    <script src="game.js"></script>
 </body>
 </html>
