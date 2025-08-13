@@ -1,13 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('[偵探日誌] 1. 網頁DOM已載入，開始初始化遊戲...');
 
     // --- 元素獲取 ---
     const startScreen = document.getElementById('start-screen');
     const loadingScreen = document.getElementById('loading-screen');
     const gameArea = document.getElementById('game-area');
     const endScreen = document.getElementById('end-screen');
-    const allScreens = [startScreen, loadingScreen, gameArea, endScreen]; // 將所有畫面集中管理
+    const allScreens = [startScreen, loadingScreen, gameArea, endScreen];
+    console.log('[偵探日誌] 2. 已獲取所有畫面元素:', allScreens);
 
     const startButton = document.getElementById('start-button');
+    // ... 其他元素獲取不變 ...
     const restartButton = document.getElementById('restart-button');
     const scrollMap = document.getElementById('scroll-map');
     const choiceOverlay = document.getElementById('choice-overlay');
@@ -18,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const createStoryButton = document.getElementById('create-story-button');
     const memoryNoteArea = document.getElementById('memory-note-area');
 
-    // --- 地圖資料 (不變) ---
     const mapData = {
         'start':     { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門',     next: 'choice1' },
         'choice1':   { type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？',
@@ -37,16 +39,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAP_HEIGHT = 2800;
     let playerPath = [];
 
-    // --- 【核心修正】畫面管理器函式 ---
-    // 這個函式負責顯示指定的畫面，並隱藏所有其他畫面
+    // --- 畫面管理器函式 ---
     function showScreen(screenId) {
+        console.log(`[偵探日誌] 4. 指令：顯示畫面 -> ${screenId}`);
         allScreens.forEach(screen => {
+            if (!screen) {
+                console.error('[偵探日誌] 錯誤！allScreens 陣列中有一個元素是 null，請檢查HTML的ID是否正確！');
+                return;
+            }
             if (screen.id === screenId) {
                 screen.classList.remove('hidden');
+                console.log(`   - 正在顯示: ${screen.id}`);
             } else {
                 screen.classList.add('hidden');
+                console.log(`   - 正在隱藏: ${screen.id}`);
             }
         });
+        console.log(`[偵探日誌] 5. 畫面切換完畢。`);
     }
 
     function initGame() {
@@ -68,17 +77,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (urlParams.has('story')) {
             preloadAssetsAndStart(true, JSON.parse(atob(urlParams.get('story'))));
         } else {
-            showScreen('start-screen'); // 確保每次都從開始畫面開始
+            showScreen('start-screen');
         }
     }
 
     function preloadAssetsAndStart(isStory = false, storyData = null) {
-        showScreen('loading-screen'); // 使用畫面管理器
+        console.log('[偵探日誌] 6. 點擊開始，準備預載入圖片...');
+        showScreen('loading-screen');
 
         const img = new Image();
         img.src = 'map.jpg';
 
         img.onload = () => {
+            console.log('[偵探日誌] 7. 圖片載入成功！');
             if (isStory) {
                 playStoryMode(storyData);
             } else {
@@ -86,13 +97,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         img.onerror = () => {
+            console.error('[偵探日誌] 8. 圖片載入失敗！');
             alert('抱歉，回憶載入失敗，請檢查網路連線後再試一次。');
-            showScreen('start-screen'); // 載入失敗時返回開始畫面
+            showScreen('start-screen');
         };
     }
 
     function startGame() {
-        showScreen('game-area'); // 使用畫面管理器
+        console.log('[偵探日誌] 9. 遊戲正式開始！');
+        showScreen('game-area');
         const startNode = mapData['start'];
         const initialY = (startNode.pos.y / 100 * MAP_HEIGHT) - (window.innerHeight * 0.85);
         scrollMap.style.transform = `translateY(-${initialY}px)`;
@@ -100,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function moveToNode(nodeId, isStoryMode = false) {
+        // ... 此處及以下函式邏輯不變，無需修改 ...
         if (!isStoryMode) { playerPath.push(nodeId); }
         const nodeData = mapData[nodeId];
         if (!nodeData) { console.error("錯誤：找不到節點資料 for ID:", nodeId); return; }
@@ -141,11 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('end-title').textContent = title;
         document.getElementById('end-description').textContent = description;
         document.getElementById('end-image-container').innerHTML = `<img src="${imageUrl}" alt="${title}">`;
-        showScreen('end-screen'); // 使用畫面管理器
+        showScreen('end-screen');
     }
 
     function playStoryMode(storyData) {
-        showScreen('game-area'); // 使用畫面管理器
+        showScreen('game-area');
         memoryNoteArea.style.display = 'none';
         const { path, note } = storyData;
         let currentStep = 0;
@@ -165,7 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- 按鈕事件綁定 ---
-    startButton.addEventListener('click', () => preloadAssetsAndStart(false));
+    startButton.addEventListener('click', () => {
+        console.log('[偵探日誌] 3. 「開始回憶」按鈕被點擊。');
+        preloadAssetsAndStart(false);
+    });
     restartButton.addEventListener('click', initGame);
     // ... 其他分享按鈕的邏輯不變 ...
     shareButton.addEventListener('click', async () => {
