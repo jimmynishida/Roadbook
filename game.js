@@ -42,97 +42,122 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAP_HEIGHT = 2800;
     let playerPath = [];
 
-    // initGame 函式維持上次修正後的狀態，是正確的
-    function initGame() {
-        playerPath = [];
-        scrollMap.innerHTML = '';
-        scrollMap.style.transition = 'none';
-        scrollMap.style.transform = 'translateY(0px)'; 
+    // ==========================================================
+    // --- 【全新核心邏輯】 ---
+    // ==========================================================
 
-        scrollMap.style.height = `${MAP_HEIGHT}px`;
-        for (const nodeId in mapData) {
+    /**
+     * 創建一個可等待的延遲函式
+     * @param {number} ms - 等待的毫秒數
+     * @returns {Promise<void>}
+     */
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    /**
+     * 捲動地圖到指定節點，並回傳一個Promise，在動畫結束後完成
+     * @param {string} nodeId - 目標節點的ID
+     * @returns {Promise<void>}
+     */
+    function moveToNode(nodeId) {
+        return new Promise(resolve => {
             const nodeData = mapData[nodeId];
-            const nodeElement = document.createElement('div');
-            nodeElement.className = 'node';
-            nodeElement.id = `node-${nodeId}`;
-            nodeElement.style.left = `${nodeData.pos.x}%`;
-            nodeElement.style.top = `${nodeData.pos.y}%`;
-            nodeElement.style.width = '100px';
-            nodeElement.style.height = '100px';
-            scrollMap.appendChild(nodeElement);
-        }
+            const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
+            const scrollAmount = targetY - (window.innerHeight * 0.85);
 
-        startScreen.classList.add('hidden');
-        endScreen.classList.add('hidden');
-        gameArea.classList.remove('hidden');
-
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('story')) {
-            const storyData = JSON.parse(atob(urlParams.get('story')));
-            playStoryMode(storyData);
-        } else {
-            setTimeout(() => {
-                moveToNode('start');
-            }, 500);
-        }
-    }
-
-    // 【★★★ 決定性修正 ★★★】
-    // 這是解決「地圖閃現」問題的核心
-    function moveToNode(nodeId, isStoryMode = false) {
-        if (!isStoryMode) { playerPath.push(nodeId); }
-        const nodeData = mapData[nodeId];
-        const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
-        const scrollAmount = targetY - (window.innerHeight * 0.85);
-
-        // 步驟 1: 先告訴瀏覽器，要有動畫效果
-        scrollMap.style.transition = 'transform 3s ease-in-out';
-        
-        // 步驟 2: 用一個極短的延遲，確保瀏覽器準備好了動畫機制
-        setTimeout(() => {
-            // 步驟 3: 再命令地圖移動，此時動畫就能平順觸發
+            const onTransitionEnd = () => {
+                scrollMap.removeEventListener('transitionend', onTransitionEnd);
+                resolve();
+            };
+            scrollMap.addEventListener('transitionend', onTransitionEnd, { once: true });
+            
+            scrollMap.style.transition = 'transform 3s ease-in-out';
             scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
-        }, 10); // 10毫秒的延遲對人類無感，但對瀏覽器足夠
-
-        // 等待動畫播放完成後，再處理節點邏輯
-        setTimeout(() => { 
-            handleNodeType(nodeData, isStoryMode); 
-        }, 3100);
+        });
     }
-    
-    // handleNodeType 函式維持上次修正後的狀態，是正確的
-    function handleNodeType(nodeData, isStoryMode = false) {
-        if (isStoryMode && nodeData.type === 'choice') { return; }
 
+    /**
+     * 處理選擇介面的顯示與邏輯
+     * @param {object} nodeData - 選擇節點的資料
+     */
+    function showChoice(nodeData) {
+        choiceText.textContent = nodeData.text;
+        choiceButtons.innerHTML = '';
+        nodeData.choices.forEach(choice => {
+            const button = document.createElement('button');
+            button.className = 'choice-btn';
+            button.textContent = choice.text;
+            button.onclick = () => {
+                choiceOverlay.classList.add('hidden');
+                playerPath.push(choice.target);
+                runGameLogic(choice.target); // 點擊後，繼續執行遊戲主流程
+            };
+            choiceButtons.appendChild(button);
+        });
+        choiceOverlay.classList.remove('hidden');
+    }
+
+    /**
+     * 遊戲主流程控制器 (非同步函式)
+     * @param {string} nodeId - 要處理的節點ID
+     */
+    async function runGameLogic(nodeId) {
+        const nodeData = mapData[nodeId];
+        if (!nodeData) return;
+
+        // 步驟 1: 移動到節點位置，並「等待」動畫完成
+        await moveToNode(nodeId);
+
+        // 步驟 2: 根據節點類型，執行對應操作
         switch (nodeData.type) {
             case 'event':
-                if (!isStoryMode) {
-                    setTimeout(() => {
-                        moveToNode(nodeData.next, isStoryMode);
-                    }, 2000);
-                }
+                // 等待 2 秒，讓玩家觀看
+                await delay(2000);
+                // 繼續執行下一個節點
+                playerPath.push(nodeData.next);
+                runGameLogic(nodeData.next);
                 break;
+            
             case 'choice':
-                choiceText.textContent = nodeData.text;
-                choiceButtons.innerHTML = '';
-                nodeData.choices.forEach(choice => {
-                    const button = document.createElement('button');
-                    button.className = 'choice-btn';
-                    button.textContent = choice.text;
-                    button.onclick = () => {
-                        choiceOverlay.classList.add('hidden');
-                        moveToNode(choice.target, isStoryMode);
-                    };
-                    choiceButtons.appendChild(button);
-                });
-                choiceOverlay.classList.remove('hidden');
+                // 顯示選擇介面，等待玩家點擊 (流程會在此暫停)
+                showChoice(nodeData);
                 break;
+
             case 'end':
+                // 顯示結局畫面
                 showEndScreen(nodeData);
                 break;
         }
     }
 
+    /**
+     * 遊戲初始化
+     */
+    function initGame() {
+        // 重置狀態
+        playerPath = [];
+        scrollMap.innerHTML = '';
+        gameArea.classList.remove('hidden');
+        startScreen.classList.add('hidden');
+        endScreen.classList.add('hidden');
+        
+        // 準備地圖，但無動畫
+        scrollMap.style.transition = 'none';
+        scrollMap.style.transform = 'translateY(0px)';
+        scrollMap.style.height = `${MAP_HEIGHT}px`;
+
+        // 啟動遊戲主流程
+        playerPath.push('start');
+        setTimeout(() => runGameLogic('start'), 100); // 短暫延遲後啟動，確保畫面穩定
+    }
+    
+    // --- 按鈕事件綁定 ---
+    startButton.addEventListener('click', initGame);
+    restartButton.addEventListener('click', () => {
+        // 直接刷新頁面，最乾淨的重置方式
+        window.location.href = window.location.origin + window.location.pathname;
+    });
+
+    // --- 分享相關功能 (保持不變) ---
     function showEndScreen(endNode, customNote = null) {
         document.getElementById('end-title').textContent = endNode.title;
         document.getElementById('end-description').textContent = customNote || endNode.description;
@@ -141,36 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
         endScreen.classList.remove('hidden');
     }
 
-    function playStoryMode(storyData) {
-        const { path, note } = storyData;
-        let currentStep = 0;
-        memoryNoteArea.style.display = 'none';
-        const initialY = (mapData[path[0]].pos.y / 100 * MAP_HEIGHT) - (window.innerHeight * 0.85);
-        scrollMap.style.transform = `translateY(-${initialY}px)`;
-        function nextStep() {
-            if (currentStep < path.length) {
-                const nodeId = path[currentStep];
-                const nodeData = mapData[nodeId];
-                moveToNode(nodeId, true);
-                currentStep++;
-                if (nodeData.type !== 'end') {
-                    setTimeout(nextStep, 5100);
-                } else {
-                    setTimeout(() => showEndScreen(nodeData, note), 3100);
-                }
-            }
-        }
-        setTimeout(nextStep, 500);
-    }
-
-    startButton.addEventListener('click', initGame);
+    // 分享和生成故事連結的功能保持不變
+    shareButton.addEventListener('click', async () => { /* ... */ });
+    createStoryButton.addEventListener('click', () => { /* ... */ });
     
-    // restartButton 函式維持上次修正後的狀態，是正確的
-    restartButton.addEventListener('click', () => {
-        window.location.href = window.location.origin + window.location.pathname;
-    });
-
-    shareButton.addEventListener('click', async () => {
+    // 為了程式碼的完整性，將不變的分享函式貼上
+    shareButton.onclick = async () => {
         const endNode = mapData[playerPath[playerPath.length - 1]];
         const shareData = {
             title: '我在「指尖的時光路書」走出了這個结局！',
@@ -181,9 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navigator.share) { await navigator.share(shareData); }
             else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享給朋友！'); }
         } catch (err) { console.error('分享失敗:', err); }
-    });
-
-    createStoryButton.addEventListener('click', () => {
+    };
+    createStoryButton.onclick = () => {
         const note = memoryInput.value.trim();
         if (!note) { alert('請先寫下你的回憶註解！'); return; }
         const storyData = { path: playerPath, note: note };
@@ -192,5 +192,5 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.clipboard.writeText(storyUrl).then(() => {
             alert('您的專屬故事連結已複製！快分享給您的孩子或朋友吧！');
         }).catch(err => { alert('複製失敗，請手動複製以下連結：\n' + storyUrl); });
-    });
+    };
 });
