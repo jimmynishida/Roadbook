@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>情懷尋寶圖 (直式版)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    /* ... 其他 CSS ... */
+    .main-frame {
+      position: relative;
+      width: 95vw;
+      max-width: 420px;
+      /* ★★★ 修正核心：讓高度自適應內容，並設定最大高度 ★★★ */
+      height: auto;
+      max-height: 95vh;
+      margin: auto; /* 讓其在垂直置中和頂部對齊間取得平衡 */
+      padding: 15px;
+      background: rgba(35, 38, 50, 0.95);
+      box-shadow: 0 0 80px #444, 0 0 0 6px #fce26a inset;
+      border-radius: 24px;
+      z-index: 2;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+     .title-screen, .game-over-screen {
+        padding: 20px 0;
+        min-height: 50vh; /* 為標題畫面設定最小高度，避免內容少時看起來太空 */
+     }
+    /* ... 其他 CSS ... */
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <audio id="sfx-found" src="audio/sfx-coin.mp3"></audio>
+  <audio id="sfx-hint" src="audio/sfx-vhs.mp3"></audio>
+  <audio id="bgm-main" src="audio/bgm-citypop.mp3" loop></audio>
+  
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  
+  <script>
+    const e = React.createElement;
+    // --- JavaScript 內容與上次提供的最終版完全相同 ---
+    const sceneData = {
+      id: 'desk_90s_vertical',
+      name: '90年代的書房',
+      background: 'assets/scene-desk-90s-vertical.jpg', 
+      objects: [
+        { id: 'gameboy', name: 'Game Boy', coords: { x: 65, y: 75, size: 18 } },
+        { id: 'floppydisk', name: '3.5吋磁碟片', coords: { x: 25, y: 88, size: 12 } },
+        { id: 'tamagotchi', name: '電子雞', coords: { x: 50, y: 55, size: 10 } },
+        { id: 'yakult', name: '養樂多', coords: { x: 20, y: 65, size: 8 } }
+      ]
+    };
+    const sfxElements = { found: () => document.getElementById("sfx-found"), hint: () => document.getElementById("sfx-hint") };
+    function playSfx(name) { const el = sfxElements[name](); if (el) { el.currentTime = 0; el.play().catch(()=>{}); } }
+    function App() {
+      const [gameStatus, setGameStatus] = React.useState("TITLE");
+      const [foundObjects, setFoundObjects] = React.useState([]);
+      const [markers, setMarkers] = React.useState([]);
+      const resetGame = () => { setFoundObjects([]); setMarkers([]); setGameStatus('PLAYING'); };
+      const handleSceneClick = (event) => {
+        if (gameStatus !== 'PLAYING') return;
+        const rect = event.target.getBoundingClientRect();
+        const clickX = ((event.clientX - rect.left) / rect.width) * 100;
+        const clickY = ((event.clientY - rect.top) / rect.height) * 100;
+        let hit = false;
+        sceneData.objects.forEach(obj => {
+          if (foundObjects.includes(obj.id)) return;
+          const dist = Math.sqrt(Math.pow(clickX - obj.coords.x, 2) + Math.pow(clickY - obj.coords.y, 2));
+          if (dist < obj.coords.size / 2) {
+            hit = true;
+            playSfx('found');
+            const newFound = [...foundObjects, obj.id];
+            setFoundObjects(newFound);
+            setMarkers([...markers, { ...obj.coords, type: 'found' }]);
+            if (newFound.length === sceneData.objects.length) {
+              setTimeout(() => setGameStatus('COMPLETE'), 1000);
+            }
+          }
+        });
+      };
+      const useHint = () => {
+        const unfoundObject = sceneData.objects.find(obj => !foundObjects.includes(obj.id));
+        if (unfoundObject) {
+            playSfx('hint');
+            const hintMarker = { ...unfoundObject.coords, type: 'hint', id: Date.now() };
+            setMarkers([...markers, hintMarker]);
+            setTimeout(() => {
+                setMarkers(prev => prev.filter(m => m.id !== hintMarker.id));
+            }, 1500);
+        }
+      };
+      const shareForHelp = () => { alert('【分享求助】功能將會截取目前畫面，並讓您傳送給朋友一起來幫忙找喔！'); };
+      const renderContent = () => {
+        switch (gameStatus) {
+          case 'PLAYING':
+            return e('div', { className: 'game-container' },
+              e('div', { className: 'scene-container', onClick: handleSceneClick },
+                e('img', { src: sceneData.background, className: 'scene-background' }),
+                ...markers.map((m, i) => e('div', { key: i, className: `${m.type}-marker`, style: { left: `${m.x}%`, top: `${m.y}%`, width: `${m.size}%`, height: `${m.size / (3/4)}%`, transform: 'translate(-50%, -50%)' } }))
+              ),
+              e('div', { className: 'hud' },
+                e('div', { className: 'hud-title' }, `在「${sceneData.name}」中找出以下物品：`),
+                e('div', { className: 'object-list' },
+                  ...sceneData.objects.map(obj => e('span', { key: obj.id, className: `object-item ${foundObjects.includes(obj.id) ? 'found' : ''}` }, obj.name))
+                ),
+                e('div', { className: 'game-actions' },
+                  e('button', { className: 'action-btn', onClick: useHint }, '💡 提示'),
+                  e('button', { className: 'action-btn', onClick: shareForHelp }, '🧑‍🤝‍🧑 分享求助')
+                )
+              )
+            );
+          case 'COMPLETE':
+            return e('div', { className: 'game-over-screen' },
+              e('h2', { className: 'pixel-font', style: { color: "#F9DF5B" } }, "恭喜！全部找到了！"),
+              e('p', {style:{color:"#fff"}}, `您成功找出了「${sceneData.name}」中的所有秘密！`),
+              e('button', { className: "start-btn", onClick: () => setGameStatus('TITLE') }, "返回主選單")
+            );
+          default: // TITLE
+            return e("div", { className: "title-screen" }, 
+              e("h1", { className: "pixel-font", style: { color: "#F9DF5B" } }, "情懷尋寶圖"), 
+              e("p", { style: { color: "#E383B9" } }, "在懷舊場景中，找出隱藏的寶物"), 
+              e("button", { className: "start-btn", onClick: resetGame }, "開始尋寶")
+            );
+        }
+      };
+      return e("div", { className: "crt-bg" },
+        e("div", { className: "main-frame" }, renderContent())
+      );
+    }
+    ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+  </script>
+</body>
+</html>

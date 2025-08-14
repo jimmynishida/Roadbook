@@ -1,49 +1,25 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>指尖的時光路書</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+    </head>
 <body>
 
-    <div id="game-container">
-        <div id="start-screen" class="screen">
-            <h1>指尖的時光路書</h1>
-            <p class="subtitle">一段屬於我們的青春旅程</p>
-            <p>那年放學後，你選擇走向哪裡？</p>
-            <button id="start-button" class="btn">開始回憶</button>
-        </div>
+    <div id="start-screen" class="screen">...</div>
+    <div id="game-area" class="hidden">...</div>
+    <div id="end-screen" class="screen hidden">...</div>
 
-        <div id="game-area" class="hidden">
-            <div id="scroll-map">
-                </div>
-            <div id="choice-overlay" class="hidden">
-                <p id="choice-text"></p>
-                <div id="choice-buttons">
-                    </div>
-            </div>
-        </div>
-
-        <div id="end-screen" class="screen hidden">
-            <h2 id="end-title"></h2>
-            <div id="end-image-container"></div>
-            <p id="end-description"></p>
-
-            <div id="social-area">
-                <button id="share-button" class="btn social-btn">分享我的結局</button>
-                <div id="memory-note-area">
-                    <p class="subtitle">為這段回憶，寫下你的註解吧！</p>
-                    <textarea id="memory-input" placeholder="例如：我小時候真的都把零用錢..."></textarea>
-                    <button id="create-story-button" class="btn social-btn">生成我的故事連結</button>
-                </div>
-            </div>
-            
-            <button id="restart-button" class="btn">再走一次青春路</button>
-        </div>
+    <div id="minigame-container" class="hidden">
+        <div id="minigame-root"></div>
     </div>
 
+    <audio id="sfx-coin" src="audio/sfx-coin.mp3"></audio>
+    <audio id="sfx-vhs" src="audio/sfx-vhs.mp3"></audio>
+    <audio id="sfx-wrong" src="audio/sfx-wrong.mp3"></audio>
+    <audio id="bgm-main" src="audio/bgm-chiptune1.mp3" loop></audio>
+
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+
     <script src="game.js"></script>
-</body>
-</html>
+
+</body> </html>
