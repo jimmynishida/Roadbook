@@ -70,15 +70,17 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
 #scroll-map {
     position: absolute;
     width: 100%;
-    /* 【方向調整】改為從頂部定位，地圖本身在上方，通過 transform 將其向下拉 */
     top: 0; 
-    /* 初始位置由JS設定，這裡不再需要 bottom: 0 */
     background-image: url('map.jpg');
     background-color: #fdf5e6;
-    /* 【★★★ 修正點 ★★★】 */
-    background-repeat: no-repeat;  /* 1. 禁止背景圖重複 */
-    background-size: 100% auto;    /* 2. 讓背景圖寬度填滿，高度等比縮放 */
-    background-position: top center; /* 3. 確保圖片從頂部中心開始顯示 */
+    background-repeat: no-repeat;
+    
+    /* 【★★★ 根本問題修正 ★★★】 */
+    /* 將 '100% auto' 改為 '100% 100%' */
+    /* 強制背景圖的高和寬都100%鋪滿它所在的容器(div) */
+    background-size: 100% 100%;
+    
+    background-position: top center;
 }
 
 .node {
