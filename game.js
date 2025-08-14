@@ -42,11 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAP_HEIGHT = 2800;
     let playerPath = [];
 
+    // initGame 函式維持上次修正後的狀態，是正確的
     function initGame() {
         playerPath = [];
         scrollMap.innerHTML = '';
         scrollMap.style.transition = 'none';
-        // 確保地圖從一個固定的初始位置開始，而不是隨機的
         scrollMap.style.transform = 'translateY(0px)'; 
 
         scrollMap.style.height = `${MAP_HEIGHT}px`;
@@ -57,10 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
             nodeElement.id = `node-${nodeId}`;
             nodeElement.style.left = `${nodeData.pos.x}%`;
             nodeElement.style.top = `${nodeData.pos.y}%`;
-
             nodeElement.style.width = '100px';
             nodeElement.style.height = '100px';
-
             scrollMap.appendChild(nodeElement);
         }
 
@@ -73,39 +71,41 @@ document.addEventListener('DOMContentLoaded', () => {
             const storyData = JSON.parse(atob(urlParams.get('story')));
             playStoryMode(storyData);
         } else {
-            // 【★★★ 關鍵修正 1 ★★★】
-            // 移除此處的初始定位程式碼。
-            // 不再「瞬移」到起始點，而是讓第一個 moveToNode 產生從頭開始的動畫。
-            /*
-            const startNode = mapData['start'];
-            const initialY = (startNode.pos.y / 100 * MAP_HEIGHT) - (window.innerHeight * 0.85);
-            scrollMap.style.transform = `translateY(-${initialY}px)`;
-            */
-            
-            // 直接在短暫延遲後，開始捲動到第一個節點
             setTimeout(() => {
                 moveToNode('start');
-            }, 500); // 延遲500毫秒是為了確保瀏覽器有足夠時間渲染初始畫面
+            }, 500);
         }
     }
 
+    // 【★★★ 決定性修正 ★★★】
+    // 這是解決「地圖閃現」問題的核心
     function moveToNode(nodeId, isStoryMode = false) {
         if (!isStoryMode) { playerPath.push(nodeId); }
         const nodeData = mapData[nodeId];
         const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
         const scrollAmount = targetY - (window.innerHeight * 0.85);
-        scrollMap.style.transition = 'transform 3s ease-in-out';
-        scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
-        setTimeout(() => { handleNodeType(nodeData, isStoryMode); }, 3100);
-    }
 
+        // 步驟 1: 先告訴瀏覽器，要有動畫效果
+        scrollMap.style.transition = 'transform 3s ease-in-out';
+        
+        // 步驟 2: 用一個極短的延遲，確保瀏覽器準備好了動畫機制
+        setTimeout(() => {
+            // 步驟 3: 再命令地圖移動，此時動畫就能平順觸發
+            scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
+        }, 10); // 10毫秒的延遲對人類無感，但對瀏覽器足夠
+
+        // 等待動畫播放完成後，再處理節點邏輯
+        setTimeout(() => { 
+            handleNodeType(nodeData, isStoryMode); 
+        }, 3100);
+    }
+    
+    // handleNodeType 函式維持上次修正後的狀態，是正確的
     function handleNodeType(nodeData, isStoryMode = false) {
         if (isStoryMode && nodeData.type === 'choice') { return; }
 
         switch (nodeData.type) {
             case 'event':
-                 // 【★★★ 關鍵修正 2 ★★★】
-                 // 保留此判斷式，避免故事模式和一般模式的流程衝突
                 if (!isStoryMode) {
                     setTimeout(() => {
                         moveToNode(nodeData.next, isStoryMode);
@@ -164,9 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     startButton.addEventListener('click', initGame);
-
-    // 【★★★ 關鍵修正 3 ★★★】
-    // 保留此修改，點擊重來按鈕時刷新頁面，清除所有狀態
+    
+    // restartButton 函式維持上次修正後的狀態，是正確的
     restartButton.addEventListener('click', () => {
         window.location.href = window.location.origin + window.location.pathname;
     });
