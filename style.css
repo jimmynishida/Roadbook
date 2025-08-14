@@ -75,6 +75,10 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     /* 初始位置由JS設定，這裡不再需要 bottom: 0 */
     background-image: url('map.jpg');
     background-color: #fdf5e6;
+    /* 【★★★ 修正點 ★★★】 */
+    background-repeat: no-repeat;  /* 1. 禁止背景圖重複 */
+    background-size: 100% auto;    /* 2. 讓背景圖寬度填滿，高度等比縮放 */
+    background-position: top center; /* 3. 確保圖片從頂部中心開始顯示 */
 }
 
 .node {
