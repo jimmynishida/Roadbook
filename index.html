@@ -8,19 +8,39 @@
 </head>
 <body>
 
-    <div id="game-container">
-        <div id="start-screen" class="screen">
-    <h1>指尖的時光路書</h1>
-    <p class="subtitle">一段屬於我們的青春旅程<br>那年放學後，你選擇走向哪裡？</p>
-    <button id="start-button" class="btn">開始回憶</button>
-    </div>
-<div id="game-area" class="hidden">
+<div id="game-container">
+
+    <div id="start-screen" class="screen">
+        <h1>指尖的時光路書</h1>
+        <p class="subtitle">一段屬於我們的青春旅程<br>那年放學後，你選擇走向哪裡？</p>
+        <button id="start-button" class="btn">開始回憶</button>
+        </div>
+
+    <div id="game-area" class="hidden">
+        <div id="scroll-map"></div>
+        <div id="choice-overlay" class="hidden">
+            <p id="choice-text">要去哪裡呢？</p>
+            <div id="choice-buttons">
+                </div>
+        </div>
     </div>
 
-<div id="end-screen" class="screen hidden">
+    <div id="end-screen" class="screen hidden">
+        <h2 id="end-title">結局標題</h2>
+        <div id="end-image-container">
+            </div>
+        <p id="end-description">結局的描述文字會顯示在這裡。</p>
+        
+        <div id="social-area">
+            <button id="share-button" class="btn social-btn">分享我的結局</button>
+            <div id="memory-note-area">
+                <textarea id="memory-input" placeholder="為這段回憶寫下你的專屬註解..."></textarea>
+                <button id="create-story-button" class="btn social-btn">生成我的故事連結</button>
+            </div>
+        </div>
+
+        <button id="restart-button" class="btn">再走一次青春路</button>
     </div>
-
-
 
     <div id="minigame-container" class="hidden">
         <div id="minigame-root"></div>
@@ -31,9 +51,9 @@
     <audio id="sfx-wrong" src="audio/sfx-wrong.mp3"></audio>
     <audio id="bgm-main" src="audio/bgm-chiptune1.mp3" loop></audio>
 
-    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+</div> <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+<script src="game.js"></script>
 
-    <script src="game.js"></script>
-
-</body> </html>
+</body>
+</html>
