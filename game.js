@@ -79,34 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 遊戲地圖資料 ---
-    // ▼▼▼【已修正】mapData 數據結構 ▼▼▼
     const mapData = {
         'start': { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門',     next: 'choice1' },
-        'choice1': { 
-            type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？', 
-            choices: [ 
-                { text: '去左邊的「柑仔店」', target: 'gamadim' }, 
-                { text: '去右邊的「電動間」', target: 'arcade', setFlag: {"playedArcade": true} }
-            ] 
-        },
+        'choice1': { type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？', choices: [ { text: '去左邊的「柑仔店」', target: 'gamadim' }, { text: '去右邊的「電動間」', target: 'arcade', setFlag: {"playedArcade": true} } ] },
         'gamadim': { type: 'event',  pos: { x: 30, y: 65 }, text: '在柑仔店買了零食',   next: 'gamadim_puzzle'  },
         "gamadim_puzzle": { "type": "minigame-memory-puzzle", "pos": { "x": 30, "y": 60 }, "puzzleId": "puz01", "next": "choice2", "categoryFilter": "snack", "anchorY": 0.5 },
         'arcade': { type: 'event',  pos: { x: 70, y: 55 }, text: '在電動間打遊戲',    next: 'choice2' },
-        'choice2': { 
-            type: 'choice', pos: { x: 50, y: 45 }, text: '天色晚了，回家吧...', 
-            choices: [ 
-                { text: '走大路回家', target: 'final_check' },
-                { text: '跟朋友在大樹下道別', target: 'tree' } 
-            ], "anchorY": 0.8 
-        },
+        'choice2': { type: 'choice', pos: { x: 50, y: 45 }, text: '天色晚了，回家吧...', choices: [ { text: '走大路回家', target: 'final_check' }, { text: '跟朋友在大樹下道別', target: 'tree' } ], "anchorY": 0.8 },
         'tree': { type: 'event',  pos: { x: 70, y: 35 }, text: '在大樹下玩耍道別',     next: 'end_friends' },
-        'final_check': {
-            "type": "conditional",
-            "pos": { "x": 60, "y": 12 },
-            "checkFlag": "playedArcade",
-            "target_if_true": "end_home_late",
-            "target_if_false": "end_home_normal"
-        },
+        'final_check': { "type": "conditional", "pos": { "x": 60, "y": 12 }, "checkFlag": "playedArcade", "target_if_true": "end_home_late", "target_if_false": "end_home_normal" },
         'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 60, y: 10 }, title: '溫暖的晚餐', description: '雖然平凡，但家裡的飯菜香和等待的燈光，就是一天中最安穩的時刻。這是最簡單的幸福。', img: 'https://i.imgur.com/FqA8sXv.jpg' },
         'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 60, y: 10 }, title: '媽媽的咆哮', description: '「又跑到哪裡瘋啦！這麼晚才回來！」雖然被罵了一頓，但聞到飯菜香，心還是暖的。', img: 'https://i.imgur.com/FqA8sXv.jpg' },
         'end_friends': { type: 'end', id: 'end_friends', pos: { x: 75, y: 15 }, title: '難忘的友誼', description: '青春最棒的，就是有個能陪你一起在路燈下聊天的朋友。那些無聊又閃亮的夜晚，構成了我們的少年時代。', img: 'https://i.imgur.com/gW3L3Yg.jpg' }
@@ -126,10 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
             const anchorRatio = nodeData.anchorY || 0.85;
             const scrollAmount = targetY - (window.innerHeight * anchorRatio);
-            const onTransitionEnd = () => {
-                scrollMap.removeEventListener('transitionend', onTransitionEnd);
-                resolve();
-            };
+            const onTransitionEnd = () => { scrollMap.removeEventListener('transitionend', onTransitionEnd); resolve(); };
             scrollMap.addEventListener('transitionend', onTransitionEnd, { once: true });
             scrollMap.style.transition = 'transform 3s ease-in-out';
             scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
@@ -157,45 +135,26 @@ document.addEventListener('DOMContentLoaded', () => {
         choiceOverlay.classList.remove('hidden');
     }
     
-    
+    function handleMemoryPuzzle(nodeData) {
         return new Promise(resolve => {
             const minigameContainer = document.getElementById('minigame-container');
             const minigameRoot = document.getElementById('minigame-root');
+            const root = ReactDOM.createRoot(minigameRoot);
             const props = {
                 puzzleId: nodeData.puzzleId,
                 category: nodeData.categoryFilter,
                 onComplete: () => {
-                    ReactDOM.createRoot(minigameRoot).unmount();
+                    root.unmount(); 
                     minigameContainer.classList.add('hidden');
                     gameArea.classList.remove('hidden');
-                    resolfunction handleMemoryPuzzle(nodeData) {
-    return new Promise(resolve => {
-        const minigameContainer = document.getElementById('minigame-container');
-        const minigameRoot = document.getElementById('minigame-root');
-
-        // ▼▼▼【新增修正】▼▼▼
-        // 每次都創建一個新的 React Root 實例
-        const root = ReactDOM.createRoot(minigameRoot);
-
-        const props = {
-            puzzleId: nodeData.puzzleId,
-            category: nodeData.categoryFilter,
-            onComplete: () => {
-                // 使用同一個 root 實例來安全地卸載組件
-                root.unmount(); 
-                minigameContainer.classList.add('hidden');
-                gameArea.classList.remove('hidden');
-                resolve();
-            }
-        };
-
-        gameArea.classList.add('hidden');
-        minigameContainer.classList.remove('hidden');
-        
-        // 使用新的 root 實例來渲染
-        root.render(e(MemoryPuzzleApp, props));
-    });
-}
+                    resolve();
+                }
+            };
+            gameArea.classList.add('hidden');
+            minigameContainer.classList.remove('hidden');
+            root.render(e(MemoryPuzzleApp, props));
+        });
+    }
 
     async function runGameLogic(nodeId) {
         const nodeData = mapData[nodeId];
@@ -234,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initGame() {
         playerPath = [];
-        storyFlags = {}; // 重置故事標籤
+        storyFlags = {};
         scrollMap.innerHTML = '';
         gameArea.classList.remove('hidden');
         startScreen.classList.add('hidden');
