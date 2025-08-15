@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 「記憶寶物架」小遊戲的完整程式碼 ---
     // ========================================================
     const e = React.createElement;
-    const nostalgicItems = [ { name: "Game Boy", img: "assets/gameboy.jpeg", value: 2800, category: "electronics" }, { name: "B.B. Call 傳呼機", img: "assets/bb-call.webp", value: 1800, category: "electronics" }, { name: "Tamagotchi 電子雞", img: "assets/tamagotchi.jpeg", value: 700, category: "toy" }, { name: "王子麵", img: "assets/prince-noodles.png", value: 3, category: "snack" }, { name: "養樂多", img: "assets/yakult.jpg", value: 2, category: "snack" } ];
+    const nostalgicItems = [ { name: "Game Boy", img: "assets/gameboy.jpeg", value: 2800, category: "electronics" }, { name: "B.B. Call 傳呼機", img: "assets/bb-call.webp", value: 1800, category: "electronics" }, { name: "Tamagotchi 電子雞", img: "assets/tamagotchi.jpeg", value: 700, category: "toy" }, { name: "王子麵", img: "assets/prince-noodles.png", value: 3, category: "snack" }, { name: "養樂多", img: "assets/yakult.jpg", value: 2, category: "snack" }, { name: "箭牌口香糖", img: "assets/doublemint.jpeg", value: 2, category: "snack" }, { name: "乖乖", img: "assets/guai-guai.png", value: 2, category: "snack" }, { name: "森永牛奶糖", img: "assets/morinaga-caramel.png", value: 2, category: "snack" }, { name: "黑松沙士", img: "assets/sarsaparilla.png", value: 2, category: "snack" } ];
     const puzzleData = { id: 'puz01', name: '我的 Game Boy', image: 'assets/puzzle-image-01.png' };
     const levelConfig = [ { level: 1, items: 3, memoryTime: 6000, mode: "FIND_DIFF" }, { level: 2, items: 3, memoryTime: 5000, mode: "FIND_DIFF" }, { level: 3, items: 3, memoryTime: 5000, mode: "ESTIMATE_PRICE" }, { level: 4, items: 4, memoryTime: 5000, mode: "FIND_DIFF" }, { level: 5, items: 4, memoryTime: 4000, mode: "ESTIMATE_PRICE" }, { level: 6, items: 4, memoryTime: 4000, mode: "FIND_DIFF" }, { level: 7, items: 5, memoryTime: 4000, mode: "FIND_DIFF" }, { level: 8, items: 5, memoryTime: 3500, mode: "ESTIMATE_PRICE" }, { level: 9, items: 5, memoryTime: 3500, mode: "FIND_DIFF" }, ];
     function getRandomItems(n, category) { let sourceItems = nostalgicItems; if (category) { sourceItems = nostalgicItems.filter(item => item.category === category); } const arr = sourceItems.slice(); const items = []; while (items.length < n && arr.length > 0) { const idx = Math.floor(Math.random() * arr.length); items.push(arr.splice(idx, 1)[0]); } return items; }
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         choiceOverlay.classList.remove('hidden');
     }
     
-    function handleMemoryPuzzle(nodeData) {
+    
         return new Promise(resolve => {
             const minigameContainer = document.getElementById('minigame-container');
             const minigameRoot = document.getElementById('minigame-root');
@@ -168,15 +168,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     ReactDOM.createRoot(minigameRoot).unmount();
                     minigameContainer.classList.add('hidden');
                     gameArea.classList.remove('hidden');
-                    resolve();
-                }
-            };
-            gameArea.classList.add('hidden');
-            minigameContainer.classList.remove('hidden');
-            const root = ReactDOM.createRoot(minigameRoot);
-            root.render(e(MemoryPuzzleApp, props));
-        });
-    }
+                    resolfunction handleMemoryPuzzle(nodeData) {
+    return new Promise(resolve => {
+        const minigameContainer = document.getElementById('minigame-container');
+        const minigameRoot = document.getElementById('minigame-root');
+
+        // ▼▼▼【新增修正】▼▼▼
+        // 每次都創建一個新的 React Root 實例
+        const root = ReactDOM.createRoot(minigameRoot);
+
+        const props = {
+            puzzleId: nodeData.puzzleId,
+            category: nodeData.categoryFilter,
+            onComplete: () => {
+                // 使用同一個 root 實例來安全地卸載組件
+                root.unmount(); 
+                minigameContainer.classList.add('hidden');
+                gameArea.classList.remove('hidden');
+                resolve();
+            }
+        };
+
+        gameArea.classList.add('hidden');
+        minigameContainer.classList.remove('hidden');
+        
+        // 使用新的 root 實例來渲染
+        root.render(e(MemoryPuzzleApp, props));
+    });
+}
 
     async function runGameLogic(nodeId) {
         const nodeData = mapData[nodeId];
