@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sfxElements = { coin: () => document.getElementById("sfx-coin"), wrong: () => document.getElementById("sfx-wrong"), vhs: () => document.getElementById("sfx-vhs"), };
     function playSfx(name) { const el = sfxElements[name](); if (el) { el.currentTime = 0; el.play().catch(()=>{}); } }
     function generatePoster(puzzle) { const canvas = document.createElement('canvas'); canvas.width = 600; canvas.height = 800; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#1A202C'; ctx.fillRect(0, 0, 600, 800); const img = new Image(); img.crossOrigin = 'Anonymous'; img.src = puzzle.image; img.onload = () => { ctx.drawImage(img, 50, 150, 500, 500); ctx.fillStyle = '#F7FAFC'; ctx.font = 'bold 48px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('記憶解鎖！', 300, 80); ctx.font = '24px sans-serif'; ctx.fillText(`我成功拼湊了「${puzzle.name}」`, 300, 700); const link = document.createElement('a'); link.download = `我的懷舊記憶-${puzzle.id}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }; img.onerror = () => { alert('海報圖片載入失敗'); }; }
+    
     function MemoryPuzzleApp(props) {
         const { onComplete, puzzleId, category } = props;
         const [gameStatus, setGameStatus] = React.useState("TITLE");
@@ -50,8 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const resetGame = () => { setCurrentLevel(1); setUnlockedPieces(Array(9).fill(false)); setFeedback(''); setGameStatus('PLAYING'); };
         const renderPuzzle = () => { const pieces = []; for (let i = 0; i < 9; i++) { pieces.push(e('div', { key: i, className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`, style: { backgroundImage: `url(${puzzleData.image})`, backgroundPosition: `${(i % 3) * 50}% ${(Math.floor(i / 3)) * 50}%` } })); } return e('div', {className: 'puzzle-container'}, e('p', {style: {color: '#fff', fontSize: '1.1em'}}, puzzleData.name), e('div', {className: 'puzzle-grid'}, pieces)); };
         const renderGameScreen = () => { if (phase === 'IDLE') return e('div', {className: 'feedback'}, feedback); const isMemoryPhase = phase === 'MEMORY'; return e(React.Fragment, null, e("div", { style: { color: isMemoryPhase ? "#E383B9" : "#6EDCFF", minHeight: '40px' } }, isMemoryPhase ? "記住貨架上的寶物吧！" : prompt), isMemoryPhase ? e("div", { className: "shelf" }, shelfItems.map((item, i) => e("div", { key: i, className: "shelf-slot" }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : (mode === "FIND_DIFF" ? e("div", { className: "shelf" }, hiddenShelfItems.map((item, i) => e("div", { key: i, className: "shelf-slot", style:{cursor:'pointer'}, onClick: () => handleAnswer(i === answer) }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : e("div", {style: {textAlign: 'center'}}, questionData.choices.map((c, i) => e("button", { key: i, className: "price-btn", onClick: () => handleAnswer(i === answer) }, c)))), isMemoryPhase && e("div", { className: "timer-bar-container" }, e("div", { className: "timer-bar", style: { animationDuration: `${levelConfig[currentLevel-1].memoryTime}ms` } }))); };
-        
-        // ▼▼▼【已修正】renderContent 函式 ▼▼▼
         const renderContent = () => {
             switch (gameStatus) {
                 case 'TITLE':
@@ -87,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？', 
             choices: [ 
                 { text: '去左邊的「柑仔店」', target: 'gamadim' }, 
-                { text: '去右邊的「電動間」', target: 'arcade', setFlag: {"playedArcade": true} } // 範例：玩電動設定一個標籤
+                { text: '去右邊的「電動間」', target: 'arcade', setFlag: {"playedArcade": true} }
             ] 
         },
         'gamadim': { type: 'event',  pos: { x: 30, y: 65 }, text: '在柑仔店買了零食',   next: 'gamadim_puzzle'  },
@@ -96,12 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
         'choice2': { 
             type: 'choice', pos: { x: 50, y: 45 }, text: '天色晚了，回家吧...', 
             choices: [ 
-                { text: '走大路回家', target: 'final_check' }, // 改為走向條件判斷節點
+                { text: '走大路回家', target: 'final_check' },
                 { text: '跟朋友在大樹下道別', target: 'tree' } 
             ], "anchorY": 0.8 
         },
         'tree': { type: 'event',  pos: { x: 70, y: 35 }, text: '在大樹下玩耍道別',     next: 'end_friends' },
-
         'final_check': {
             "type": "conditional",
             "pos": { "x": 60, "y": 12 },
@@ -109,9 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "target_if_true": "end_home_late",
             "target_if_false": "end_home_normal"
         },
-        
         'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 60, y: 10 }, title: '溫暖的晚餐', description: '雖然平凡，但家裡的飯菜香和等待的燈光，就是一天中最安穩的時刻。這是最簡單的幸福。', img: 'https://i.imgur.com/FqA8sXv.jpg' },
-        'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 60, y: 10 }, title: '媽媽的咆哮', description: '「又跑到哪裡瘋啦！這麼晚才回來！」雖然被罵了一頓，但聞到飯菜香，心還是暖的。', img: 'https://i.imgur.com/FqA8sXv.jpg' }, // 暫用同一張圖
+        'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 60, y: 10 }, title: '媽媽的咆哮', description: '「又跑到哪裡瘋啦！這麼晚才回來！」雖然被罵了一頓，但聞到飯菜香，心還是暖的。', img: 'https://i.imgur.com/FqA8sXv.jpg' },
         'end_friends': { type: 'end', id: 'end_friends', pos: { x: 75, y: 15 }, title: '難忘的友誼', description: '青春最棒的，就是有個能陪你一起在路燈下聊天的朋友。那些無聊又閃亮的夜晚，構成了我們的少年時代。', img: 'https://i.imgur.com/gW3L3Yg.jpg' }
     };
 
