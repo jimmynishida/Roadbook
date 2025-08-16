@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameArea = document.getElementById('game-area');
     const endScreen = document.getElementById('end-screen');
     const startButton = document.getElementById('start-button');
+    console.log('尋找開始按鈕:', startButton); // <-- ★★★ 在此處新增此行 ★★★
     const restartButton = document.getElementById('restart-button');
     const scrollMap = document.getElementById('scroll-map');
     const choiceOverlay = document.getElementById('choice-overlay');
