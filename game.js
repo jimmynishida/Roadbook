@@ -1,4 +1,4 @@
-// ===== 這是 8 月 16 日11:20的最終部署版本 v5 =====
+// ===== 這是 8 月 16 日11:40部署版本 v5 =====
 // 等待網頁所有元素載入完成後再執行
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endImageContainer = document.getElementById('end-image-container');
 
     // ========================================================
-    // --- 「記憶寶物架」小遊戲的完整程式碼 ---
+    // --- 「柑仔店的貨架」小遊戲的完整程式碼 ---
     // ========================================================
     const e = React.createElement;
     const nostalgicItems = [ { name: "Game Boy", img: "assets/gameboy.jpeg", value: 2800, category: "electronics" }, { name: "B.B. Call 傳呼機", img: "assets/bb-call.webp", value: 1800, category: "electronics" }, { name: "Tamagotchi 電子雞", img: "assets/tamagotchi.jpeg", value: 700, category: "toy" }, { name: "王子麵", img: "assets/prince-noodles.png", value: 3, category: "snack" }, { name: "養樂多", img: "assets/yakult.jpg", value: 2, category: "snack" }, { name: "箭牌口香糖", img: "assets/doublemint.jpeg", value: 7, category: "snack" }, { name: "乖乖", img: "assets/guai-guai.png", value: 5, category: "snack" }, { name: "森永牛奶糖", img: "assets/morinaga-caramel.png", value: 5, category: "snack" }, { name: "黑松沙士", img: "assets/sarsaparilla.png", value: 7, category: "snack" } ];
