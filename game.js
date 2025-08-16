@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 「記憶寶物架」小遊戲的完整程式碼 ---
     // ========================================================
     const e = React.createElement;
-    const nostalgicItems = [ { name: "Game Boy", img: "assets/gameboy.jpeg", value: 2800, category: "electronics" }, { name: "B.B. Call 傳呼機", img: "assets/bb-call.webp", value: 1800, category: "electronics" }, { name: "Tamagotchi 電子雞", img: "assets/tamagotchi.jpeg", value: 700, category: "toy" }, { name: "王子麵", img: "assets/prince-noodles.png", value: 3, category: "snack" }, { name: "養樂多", img: "assets/yakult.jpg", value: 2, category: "snack" }, { name: "箭牌口香糖", img: "assets/doublemint.jpeg", value: 2, category: "snack" }, { name: "乖乖", img: "assets/guai-guai.png", value: 2, category: "snack" }, { name: "森永牛奶糖", img: "assets/morinaga-caramel.png", value: 2, category: "snack" }, { name: "黑松沙士", img: "assets/sarsaparilla.png", value: 2, category: "snack" } ];
-    const puzzleData = { id: 'puz01', name: '我的 Game Boy', image: 'assets/puzzle-image-01.png' };
+    const nostalgicItems = [ { name: "Game Boy", img: "assets/gameboy.jpeg", value: 2800, category: "electronics" }, { name: "B.B. Call 傳呼機", img: "assets/bb-call.webp", value: 1800, category: "electronics" }, { name: "Tamagotchi 電子雞", img: "assets/tamagotchi.jpeg", value: 700, category: "toy" }, { name: "王子麵", img: "assets/prince-noodles.png", value: 3, category: "snack" }, { name: "養樂多", img: "assets/yakult.jpg", value: 2, category: "snack" }, { name: "箭牌口香糖", img: "assets/doublemint.jpeg", value: 7, category: "snack" }, { name: "乖乖", img: "assets/guai-guai.png", value: 5, category: "snack" }, { name: "森永牛奶糖", img: "assets/morinaga-caramel.png", value: 5, category: "snack" }, { name: "黑松沙士", img: "assets/sarsaparilla.png", value: 7, category: "snack" } ];
+    const puzzleData = { id: 'puz01', name: '今天吃什麼呢？', image: 'assets/puzzle-image-01.png' };
     const levelConfig = [ { level: 1, items: 3, memoryTime: 6000, mode: "FIND_DIFF" }, { level: 2, items: 3, memoryTime: 5000, mode: "FIND_DIFF" }, { level: 3, items: 3, memoryTime: 5000, mode: "ESTIMATE_PRICE" }, { level: 4, items: 4, memoryTime: 5000, mode: "FIND_DIFF" }, { level: 5, items: 4, memoryTime: 4000, mode: "ESTIMATE_PRICE" }, { level: 6, items: 4, memoryTime: 4000, mode: "FIND_DIFF" }, { level: 7, items: 5, memoryTime: 4000, mode: "FIND_DIFF" }, { level: 8, items: 5, memoryTime: 3500, mode: "ESTIMATE_PRICE" }, { level: 9, items: 5, memoryTime: 3500, mode: "FIND_DIFF" }, ];
     function getRandomItems(n, category) { let sourceItems = nostalgicItems; if (category) { sourceItems = nostalgicItems.filter(item => item.category === category); } const arr = sourceItems.slice(); const items = []; while (items.length < n && arr.length > 0) { const idx = Math.floor(Math.random() * arr.length); items.push(arr.splice(idx, 1)[0]); } return items; }
     function getShuffledItems(items) { const arr = items.slice(); const idx = Math.floor(Math.random() * arr.length); let newItem; do { newItem = nostalgicItems[Math.floor(Math.random() * nostalgicItems.length)]; } while (arr.find((x) => x.name === newItem.name)); arr[idx] = newItem; return { changedItems: arr, changedIdx: idx }; }
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const renderContent = () => {
             switch (gameStatus) {
                 case 'TITLE':
-                    return e("div", { className: "title-screen" }, e("h1", null, "我的時光寶物架"), e("p", null, "九宮格拼圖挑戰"), e("button", { onClick: resetGame }, "開始遊戲"));
+                    return e("div", { className: "title-screen" }, e("h1", null, "看看柑仔店有什麼？"), e("p", null, "九宮格拼圖挑戰"), e("button", { onClick: resetGame }, "開始遊戲"));
                 case 'PLAYING':
                     return e('div', { className: "memory-game-layout" }, renderPuzzle(), renderGameScreen());
                 case 'PUZZLE_COMPLETE':
@@ -88,9 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'choice2': { type: 'choice', pos: { x: 50, y: 45 }, text: '天色晚了，回家吧...', choices: [ { text: '走大路回家', target: 'final_check' }, { text: '跟朋友在大樹下道別', target: 'tree' } ], "anchorY": 0.8 },
         'tree': { type: 'event',  pos: { x: 70, y: 35 }, text: '在大樹下玩耍道別',     next: 'end_friends' },
         'final_check': { "type": "conditional", "pos": { "x": 60, "y": 12 }, "checkFlag": "playedArcade", "target_if_true": "end_home_late", "target_if_false": "end_home_normal" },
-        'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 60, y: 10 }, title: '溫暖的晚餐', description: '雖然平凡，但家裡的飯菜香和等待的燈光，就是一天中最安穩的時刻。這是最簡單的幸福。', img: 'https://i.imgur.com/FqA8sXv.jpg' },
-        'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 60, y: 10 }, title: '媽媽的咆哮', description: '「又跑到哪裡瘋啦！這麼晚才回來！」雖然被罵了一頓，但聞到飯菜香，心還是暖的。', img: 'https://i.imgur.com/FqA8sXv.jpg' },
-        'end_friends': { type: 'end', id: 'end_friends', pos: { x: 75, y: 15 }, title: '難忘的友誼', description: '青春最棒的，就是有個能陪你一起在路燈下聊天的朋友。那些無聊又閃亮的夜晚，構成了我們的少年時代。', img: 'https://i.imgur.com/gW3L3Yg.jpg' }
+        'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 60, y: 10 }, title: '溫暖的晚餐', description: '雖然平凡，但家裡的飯菜香和等待的燈光，就是一天中最安穩的時刻。這是最簡單的幸福。', img: '#1.jpeg' },
+        'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 60, y: 10 }, title: '媽媽的咆哮', description: '「又跑到哪裡瘋啦！這麼晚才回來！」雖然被罵了一頓，但聞到飯菜香，心還是暖的。', img: '#2.jpeg' },
+        'end_friends': { type: 'end', id: 'end_friends', pos: { x: 75, y: 15 }, title: '回家也是一個人', description: '爸媽都不在家，只知道忙工作...', img: '#3.png' }
     };
 
     const MAP_HEIGHT = 2800;
