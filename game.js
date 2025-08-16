@@ -1,4 +1,4 @@
-// ===== 這是基於您 8 月 16 日 13:05 提供的檔案的修正版本 v8 =====
+// ===== 這是 8 月 16 日 v3.1 =====
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 統一宣告所有網頁元素 ---
@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endTitle = document.getElementById('end-title');
     const endDescription = document.getElementById('end-description');
     const endImageContainer = document.getElementById('end-image-container');
+    const bgmMain = document.getElementById('bgm-main'); // **[新增]** 抓取 BGM 元素
 
     // ========================================================
     // --- 「柑仔店的貨架」小遊戲的完整程式碼 ---
@@ -101,10 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setGameStatus('PLAYING');
         };
 
-        // ▼▼▼【核心修正】修正 for 迴圈條件 ▼▼▼
         const renderPuzzle = () => {
             const pieces = [];
-            for (let i = 0; i < levelConfig.length; i++) { // 修正：i < levelConfig.length
+            for (let i = 0; i < levelConfig.length; i++) {
                 pieces.push(e('div', {
                     key: i,
                     className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`,
@@ -190,6 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initGame() {
+        // **[新增]** 播放背景音樂
+        if (bgmMain && bgmMain.paused) {
+            bgmMain.play().catch(e => console.error("BGM 播放失敗:", e));
+        }
+
         playerPath = [];
         storyFlags = {};
         scrollMap.innerHTML = '';
@@ -217,3 +222,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if (shareButton) { shareButton.onclick = async () => { const endNode = mapData[playerPath[playerPath.length - 1]]; const shareData = { title: '我在「指尖的時光路書」走出了這個结局！', text: `我的青春回憶是「${endNode.title}」，也來走走看你的吧！`, url: window.location.origin + window.location.pathname }; try { if (navigator.share) { await navigator.share(shareData); } else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享朋友！'); } } catch (err) { console.error('分享失敗:', err); } }; }
     if (createStoryButton) { createStoryButton.onclick = () => { const note = memoryInput.value.trim(); if (!note) { alert('請先寫下你的回憶註解！'); return; } const storyData = { path: playerPath, note: note }; const encodedStory = btoa(JSON.stringify(storyData)); const storyUrl = `${window.location.origin}${window.location.pathname}?story=${encodedStory}`; navigator.clipboard.writeText(storyUrl).then(() => { alert('您的專屬故事連結已複製！快分享給您的孩子或朋友吧！'); }).catch(err => { alert('複製失敗，請手動複製以下連結：\n' + storyUrl); }); }; }
 });
+
+// **[已刪除]** 此處原有一個多餘的 '}'，是造成錯誤的根源。
