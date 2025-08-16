@@ -1,4 +1,4 @@
-/* --- 全局與無齡感(適老化)基礎設計v1 --- */
+/* --- 全局與無齡感(適老化)基礎設計 v0--- */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "Helvetica Neue", sans-serif;
     margin: 0;
@@ -290,3 +290,4 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     from { width: 100%; }
     to { width: 0%; }
 }
+/* 【修正】此處原有一個多餘的 '}'，現已刪除 */
