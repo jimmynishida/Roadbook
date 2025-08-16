@@ -1,4 +1,4 @@
-// ===== 這是 8 月 16 日最終穩定版本 v6 =====
+// ===== 這是基於您 8 月 16 日 13:05 提供的檔案的修正版本 v8 =====
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 統一宣告所有網頁元素 ---
@@ -101,9 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setGameStatus('PLAYING');
         };
 
+        // ▼▼▼【核心修正】修正 for 迴圈條件 ▼▼▼
         const renderPuzzle = () => {
             const pieces = [];
-            for (let i = 0; i < levelConfig.length; i++) {
+            for (let i = 0; i < levelConfig.length; i++) { // 修正：i < levelConfig.length
                 pieces.push(e('div', {
                     key: i,
                     className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`,
