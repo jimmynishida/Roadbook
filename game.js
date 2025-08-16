@@ -1,4 +1,5 @@
-// ===== 這是 8 月 16 日 v3.1 =====
+// ===== 這是 8 月 16 日11:40部署版本 v5 =====
+// 等待網頁所有元素載入完成後再執行
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 統一宣告所有網頁元素 ---
@@ -17,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const endTitle = document.getElementById('end-title');
     const endDescription = document.getElementById('end-description');
     const endImageContainer = document.getElementById('end-image-container');
-    const bgmMain = document.getElementById('bgm-main'); // **[新增]** 抓取 BGM 元素
 
     // ========================================================
     // --- 「柑仔店的貨架」小遊戲的完整程式碼 ---
@@ -45,10 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const startLevel = (levelNum) => {
             const config = levelConfig[levelNum - 1];
-            if (!config) {
-                setGameStatus("PUZZLE_COMPLETE");
-                return;
-            }
+            if (!config) { setGameStatus("PUZZLE_COMPLETE"); return; }
             setPhase("MEMORY");
             const items = getRandomItems(config.items, category);
             setShelfItems(items);
@@ -72,25 +69,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 setUnlockedPieces(newUnlocked);
                 setTimeout(() => {
                     setFeedback("");
-                    setCurrentLevel(prev => prev + 1);
+                    const nextLevel = currentLevel + 1;
+                    setCurrentLevel(nextLevel);
                 }, 1200);
             } else {
                 playSfx('wrong');
                 setFeedback("答錯了！再專心一點！");
-                setTimeout(() => {
-                    setFeedback("");
-                    startLevel(currentLevel);
-                }, 1200);
+                setTimeout(() => { setFeedback(""); startLevel(currentLevel); }, 1200);
             }
         };
         
         React.useEffect(() => {
-            if (gameStatus === 'PLAYING' && phase === 'IDLE') {
-                 if (currentLevel > levelConfig.length) {
-                    setGameStatus("PUZZLE_COMPLETE");
-                } else {
-                    startLevel(currentLevel);
-                }
+            if (gameStatus === 'PLAYING' && phase === 'IDLE' && currentLevel <= levelConfig.length) {
+                startLevel(currentLevel);
+            } else if (gameStatus === 'PLAYING' && currentLevel > levelConfig.length) {
+                setGameStatus("PUZZLE_COMPLETE");
             }
         }, [currentLevel, gameStatus, phase]);
 
@@ -102,49 +95,15 @@ document.addEventListener('DOMContentLoaded', () => {
             setGameStatus('PLAYING');
         };
 
-        const renderPuzzle = () => {
-            const pieces = [];
-            for (let i = 0; i < levelConfig.length; i++) {
-                pieces.push(e('div', {
-                    key: i,
-                    className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`,
-                    style: {
-                        backgroundImage: `url(${puzzleData.image})`,
-                        backgroundSize: `${levelConfig.length * 100}% 100%`,
-                        backgroundPosition: `${i * (100 / (levelConfig.length - 1))}% 0%`
-                    }
-                }));
-            }
-            return e('div', { className: 'puzzle-container' },
-                e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name),
-                e('div', { className: 'puzzle-grid' }, pieces)
-            );
-        };
-
+        const renderPuzzle = () => { const pieces = []; for (let i = 0; i < levelConfig.length; i++) { pieces.push(e('div', { key: i, className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`, style: { backgroundImage: `url(${puzzleData.image})`, backgroundSize: '300% 100%', backgroundPosition: `${i * (100 / (levelConfig.length - 1))}% 0%` } })); } return e('div', {className: 'puzzle-container'}, e('p', {style: {color: '#fff', fontSize: '1.1em'}}, puzzleData.name), e('div', {className: 'puzzle-grid'}, pieces)); };
         const renderGameScreen = () => { if (phase === 'IDLE') return e('div', {className: 'feedback'}, feedback); const isMemoryPhase = phase === 'MEMORY'; const qData = questionData || {}; return e(React.Fragment, null, e("div", { style: { color: isMemoryPhase ? "#E383B9" : "#6EDCFF", minHeight: '40px' } }, isMemoryPhase ? "記住貨架上的寶物吧！" : qData.prompt), isMemoryPhase ? e("div", { className: "shelf" }, shelfItems.map((item, i) => e("div", { key: i, className: "shelf-slot" }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : (qData.changedItems ? e("div", { className: "shelf" }, qData.changedItems.map((item, i) => e("div", { key: i, className: "shelf-slot", style:{cursor:'pointer'}, onClick: () => handleAnswer(i === qData.answer) }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : e("div", {style: {textAlign: 'center'}}, (qData.choices || []).map((c, i) => e("button", { key: i, className: "price-btn", onClick: () => handleAnswer(i === qData.answer) }, c)))), isMemoryPhase && e("div", { className: "timer-bar-container" }, e("div", { className: "timer-bar", style: { animationDuration: `${levelConfig[currentLevel-1].memoryTime}ms` } }))); };
         
         const renderContent = () => {
             switch (gameStatus) {
-                case 'TITLE':
-                    return e("div", { className: "title-screen" }, e("h1", null, "看看柑仔店有什麼？"), e("p", null, "九宮格拼圖挑戰"), e("button", { onClick: startGame }, "開始遊戲"));
-                case 'PLAYING':
-                    return e('div', { className: "memory-game-layout" }, renderPuzzle(), renderGameScreen());
-                case 'PUZZLE_COMPLETE':
-                    return e("div", { className: 'game-over-screen' },
-                        e("h2", null, "恭喜通關！"),
-                        e('div', { className: 'puzzle-container' },
-                            e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name),
-                            e('div', {
-                                className: 'puzzle-grid complete',
-                                style: { backgroundImage: `url(${puzzleData.image})` }
-                            })
-                        ),
-                        e("p", null, `您成功拼湊了「${puzzleData.name}」的完整記憶！`),
-                        e("button", { onClick: () => generatePoster(puzzleData) }, "生成分享海報"),
-                        e("button", { onClick: onComplete }, "完成拼圖")
-                    );
-                default:
-                    return e("div", null, "載入中...");
+                case 'TITLE': return e("div", { className: "title-screen" }, e("h1", null, "看看柑仔店有什麼？"), e("p", null, "九宮格拼圖挑戰"), e("button", { onClick: startGame }, "開始遊戲"));
+                case 'PLAYING': return e('div', { className: "memory-game-layout" }, renderPuzzle(), renderGameScreen());
+                case 'PUZZLE_COMPLETE': return e("div", { className: 'game-over-screen' }, e("h2", null, "恭喜通關！"), e('div', { className: 'puzzle-container' }, e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name), e('div', { className: 'puzzle-grid complete', style: { backgroundImage: `url(${puzzleData.image})` } })), e("p", null, `您成功拼湊了「${puzzleData.name}」的完整記憶！`), e("button", { onClick: () => generatePoster(puzzleData) }, "生成分享海報"), e("button", { onClick: onComplete }, "完成拼圖"));
+                default: return e("div", null, "載入中...");
             }
         };
         return e("div", { className: "main-frame" }, renderContent());
@@ -190,11 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initGame() {
-        // **[新增]** 播放背景音樂
-        if (bgmMain && bgmMain.paused) {
-            bgmMain.play().catch(e => console.error("BGM 播放失敗:", e));
-        }
-
         playerPath = [];
         storyFlags = {};
         scrollMap.innerHTML = '';
@@ -219,8 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 事件綁定 ---
     startButton.addEventListener('click', initGame);
     restartButton.addEventListener('click', () => { window.location.href = window.location.origin + window.location.pathname; });
-    if (shareButton) { shareButton.onclick = async () => { const endNode = mapData[playerPath[playerPath.length - 1]]; const shareData = { title: '我在「指尖的時光路書」走出了這個结局！', text: `我的青春回憶是「${endNode.title}」，也來走走看你的吧！`, url: window.location.origin + window.location.pathname }; try { if (navigator.share) { await navigator.share(shareData); } else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享朋友！'); } } catch (err) { console.error('分享失敗:', err); } }; }
+    if (shareButton) { shareButton.onclick = async () => { const endNode = mapData[playerPath[playerPath.length - 1]]; const shareData = { title: '我在「指尖的時光路書」走出了這個结局！', text: `我的青春回憶是「${endNode.title}」，也來走走看你的吧！`, url: window.location.origin + window.location.pathname }; try { if (navigator.share) { await navigator.share(shareData); } else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享給朋友！'); } } catch (err) { console.error('分享失敗:', err); } }; }
     if (createStoryButton) { createStoryButton.onclick = () => { const note = memoryInput.value.trim(); if (!note) { alert('請先寫下你的回憶註解！'); return; } const storyData = { path: playerPath, note: note }; const encodedStory = btoa(JSON.stringify(storyData)); const storyUrl = `${window.location.origin}${window.location.pathname}?story=${encodedStory}`; navigator.clipboard.writeText(storyUrl).then(() => { alert('您的專屬故事連結已複製！快分享給您的孩子或朋友吧！'); }).catch(err => { alert('複製失敗，請手動複製以下連結：\n' + storyUrl); }); }; }
 });
-
-// **[已刪除]** 此處原有一個多餘的 '}'，是造成錯誤的根源。
