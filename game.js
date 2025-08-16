@@ -58,26 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return () => clearTimeout(timer);
         };
 
-        const handleAnswer = (isCorrect) => {
-            if (phase !== 'QUESTION') return;
-            setPhase('IDLE');
-            if (isCorrect) {
-                playSfx('coin');
-                setFeedback(`拼圖碎片 ${currentLevel} 解鎖！`);
-                const newUnlocked = [...unlockedPieces];
-                newUnlocked[currentLevel - 1] = true;
-                setUnlockedPieces(newUnlocked);
-                setTimeout(() => {
-                    setFeedback("");
-                    const nextLevel = currentLevel + 1;
-                    setCurrentLevel(nextLevel);
-                }, 1200);
-            } else {
-                playSfx('wrong');
-                setFeedback("答錯了！再專心一點！");
-                setTimeout(() => { setFeedback(""); startLevel(currentLevel); }, 1200);
-            }
-        };
+        const handleAnswer = (isCorrect) => { if (phase !== 'QUESTION') return; setPhase('IDLE'); if (isCorrect) { playSfx('coin'); setFeedback(`拼圖碎片 ${currentLevel} 解鎖！`); const newUnlocked = [...unlockedPieces]; newUnlocked[currentLevel - 1] = true; setUnlockedPieces(newUnlocked); setTimeout(() => { setFeedback(""); setCurrentLevel(prev => prev + 1); }, 1200); } else { playSfx('wrong'); setFeedback("答錯了！再專心一點！"); setTimeout(() => { setFeedback(""); startLevel(currentLevel); }, 1200); } };
         
         React.useEffect(() => {
             if (gameStatus === 'PLAYING' && phase === 'IDLE' && currentLevel <= levelConfig.length) {
@@ -107,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         return e("div", { className: "main-frame" }, renderContent());
-    }
+    } 
 
     // --- 遊戲地圖資料 ---
     const mapData = {
@@ -122,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'final_check': { "type": "conditional", "pos": { "x": 60, "y": 12 }, "checkFlag": "playedArcade", "target_if_true": "end_home_late", "target_if_false": "end_home_normal" },
         'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 60, y: 10 }, title: '溫暖的晚餐', description: '雖然平凡，但家裡的飯菜香和等待的燈光，就是一天中最安穩的時刻。這是最簡單的幸福。', img: 'assets/1.jpeg' },
         'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 60, y: 10 }, title: '媽媽的咆哮', description: '「又跑到哪裡瘋啦！這麼晚才回來！」雖然被罵了一頓，但聞到飯菜香，心還是暖的。', img: 'assets/2.jpeg' },
-        'end_friends': { type: 'end', id: 'end_friends', pos: { x: 75, y: 15 }, title: '回家也是一個人', description: '爸媽都不在家，只知道忙工作...', img: 'assets/3.png' }
+        'end_lonly': { type: 'end', id: 'end_lonly', pos: { x: 75, y: 15 }, title: '回家也是一個人', description: '爸媽都不在家，只知道忙工作...', img: 'assets/3.png' }
     };
 
     const MAP_HEIGHT = 2800;
