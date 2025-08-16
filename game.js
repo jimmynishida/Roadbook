@@ -1,4 +1,4 @@
-// ===== 這是 8 月 16 日最終穩定版本 v6 =====
+// ===== 這是 8 月 16 日13:15最終穩定版本 v6 =====
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 統一宣告所有網頁元素 ---
@@ -44,7 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const startLevel = (levelNum) => {
             const config = levelConfig[levelNum - 1];
-            if (!config) { setGameStatus("PUZZLE_COMPLETE"); return; }
+            if (!config) {
+                setGameStatus("PUZZLE_COMPLETE");
+                return;
+            }
             setPhase("MEMORY");
             const items = getRandomItems(config.items, category);
             setShelfItems(items);
@@ -98,7 +101,25 @@ document.addEventListener('DOMContentLoaded', () => {
             setGameStatus('PLAYING');
         };
 
-        const renderPuzzle = () => { const pieces = []; for (let i = 0; i < levelConfig.length; i++) { pieces.push(e('div', { key: i, className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`, style: { backgroundImage: `url(${puzzleData.image})`, backgroundSize: `${levelConfig.length * 100}% 100%`, backgroundPosition: `${i * (100 / (levelConfig.length - 1))}% 0%` } })); } return e('div', {className: 'puzzle-container'}, e('p', {style: {color: '#fff', fontSize: '1.1em'}}, puzzleData.name), e('div', {className: 'puzzle-grid'}, pieces)); };
+        const renderPuzzle = () => {
+            const pieces = [];
+            for (let i = 0; i < levelConfig.length; i++) {
+                pieces.push(e('div', {
+                    key: i,
+                    className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`,
+                    style: {
+                        backgroundImage: `url(${puzzleData.image})`,
+                        backgroundSize: `${levelConfig.length * 100}% 100%`,
+                        backgroundPosition: `${i * (100 / (levelConfig.length - 1))}% 0%`
+                    }
+                }));
+            }
+            return e('div', { className: 'puzzle-container' },
+                e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name),
+                e('div', { className: 'puzzle-grid' }, pieces)
+            );
+        };
+
         const renderGameScreen = () => { if (phase === 'IDLE') return e('div', {className: 'feedback'}, feedback); const isMemoryPhase = phase === 'MEMORY'; const qData = questionData || {}; return e(React.Fragment, null, e("div", { style: { color: isMemoryPhase ? "#E383B9" : "#6EDCFF", minHeight: '40px' } }, isMemoryPhase ? "記住貨架上的寶物吧！" : qData.prompt), isMemoryPhase ? e("div", { className: "shelf" }, shelfItems.map((item, i) => e("div", { key: i, className: "shelf-slot" }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : (qData.changedItems ? e("div", { className: "shelf" }, qData.changedItems.map((item, i) => e("div", { key: i, className: "shelf-slot", style:{cursor:'pointer'}, onClick: () => handleAnswer(i === qData.answer) }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : e("div", {style: {textAlign: 'center'}}, (qData.choices || []).map((c, i) => e("button", { key: i, className: "price-btn", onClick: () => handleAnswer(i === qData.answer) }, c)))), isMemoryPhase && e("div", { className: "timer-bar-container" }, e("div", { className: "timer-bar", style: { animationDuration: `${levelConfig[currentLevel-1].memoryTime}ms` } }))); };
         
         const renderContent = () => {
