@@ -1,4 +1,4 @@
-// ===== 這是 8 月 16 日11:40部署版本 v5 =====
+// ===== 這是 8 月 16 日 12:10 部署版本 v5 =====
 // 等待網頁所有元素載入完成後再執行
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -45,7 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const startLevel = (levelNum) => {
             const config = levelConfig[levelNum - 1];
-            if (!config) { setGameStatus("PUZZLE_COMPLETE"); return; }
+            if (!config) {
+                setGameStatus("PUZZLE_COMPLETE");
+                return;
+            }
             setPhase("MEMORY");
             const items = getRandomItems(config.items, category);
             setShelfItems(items);
@@ -70,40 +73,85 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     setFeedback("");
                     const nextLevel = currentLevel + 1;
+                    // ▼▼▼【核心修正 1】直接更新關卡數，讓 useEffect 去處理下一關 ▼▼▼
                     setCurrentLevel(nextLevel);
                 }, 1200);
             } else {
                 playSfx('wrong');
                 setFeedback("答錯了！再專心一點！");
-                setTimeout(() => { setFeedback(""); startLevel(currentLevel); }, 1200);
+                setTimeout(() => {
+                    setFeedback("");
+                    // 答錯了，重新開始當前關卡
+                    startLevel(currentLevel);
+                }, 1200);
             }
         };
         
+        // ▼▼▼【核心修正 2】簡化 useEffect 的職責 ▼▼▼
         React.useEffect(() => {
-            if (gameStatus === 'PLAYING' && phase === 'IDLE' && currentLevel <= levelConfig.length) {
-                startLevel(currentLevel);
-            } else if (gameStatus === 'PLAYING' && currentLevel > levelConfig.length) {
-                setGameStatus("PUZZLE_COMPLETE");
+            // 這個 effect 只負責「啟動下一關」或「結束遊戲」
+            if (gameStatus === 'PLAYING' && phase === 'IDLE') {
+                 if (currentLevel > levelConfig.length) {
+                    setGameStatus("PUZZLE_COMPLETE");
+                } else {
+                    startLevel(currentLevel);
+                }
             }
         }, [currentLevel, gameStatus, phase]);
 
+        // ▼▼▼【核心修正 3】startGame 只負責設定狀態，讓 useEffect 啟動遊戲 ▼▼▼
         const startGame = () => {
             setCurrentLevel(1);
             setUnlockedPieces(Array(levelConfig.length).fill(false));
             setFeedback('');
-            setPhase('IDLE');
+            setPhase('IDLE'); // 確保 phase 也是初始狀態
             setGameStatus('PLAYING');
         };
 
-        const renderPuzzle = () => { const pieces = []; for (let i = 0; i < levelConfig.length; i++) { pieces.push(e('div', { key: i, className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`, style: { backgroundImage: `url(${puzzleData.image})`, backgroundSize: '300% 100%', backgroundPosition: `${i * (100 / (levelConfig.length - 1))}% 0%` } })); } return e('div', {className: 'puzzle-container'}, e('p', {style: {color: '#fff', fontSize: '1.1em'}}, puzzleData.name), e('div', {className: 'puzzle-grid'}, pieces)); };
+        // ▼▼▼【核心修正 4】修正 renderPuzzle 的 for 迴圈條件 ▼▼▼
+        const renderPuzzle = () => {
+            const pieces = [];
+            for (let i = 0; i < levelConfig.length; i++) { // 修正：i < levelConfig.length
+                pieces.push(e('div', {
+                    key: i,
+                    className: `puzzle-piece ${unlockedPieces[i] ? 'unlocked' : ''}`,
+                    style: {
+                        backgroundImage: `url(${puzzleData.image})`,
+                        backgroundSize: `${levelConfig.length * 100}% 100%`,
+                        backgroundPosition: `${i * (100 / (levelConfig.length - 1))}% 0%`
+                    }
+                }));
+            }
+            return e('div', { className: 'puzzle-container' },
+                e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name),
+                e('div', { className: 'puzzle-grid' }, pieces)
+            );
+        };
+
         const renderGameScreen = () => { if (phase === 'IDLE') return e('div', {className: 'feedback'}, feedback); const isMemoryPhase = phase === 'MEMORY'; const qData = questionData || {}; return e(React.Fragment, null, e("div", { style: { color: isMemoryPhase ? "#E383B9" : "#6EDCFF", minHeight: '40px' } }, isMemoryPhase ? "記住貨架上的寶物吧！" : qData.prompt), isMemoryPhase ? e("div", { className: "shelf" }, shelfItems.map((item, i) => e("div", { key: i, className: "shelf-slot" }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : (qData.changedItems ? e("div", { className: "shelf" }, qData.changedItems.map((item, i) => e("div", { key: i, className: "shelf-slot", style:{cursor:'pointer'}, onClick: () => handleAnswer(i === qData.answer) }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : e("div", {style: {textAlign: 'center'}}, (qData.choices || []).map((c, i) => e("button", { key: i, className: "price-btn", onClick: () => handleAnswer(i === qData.answer) }, c)))), isMemoryPhase && e("div", { className: "timer-bar-container" }, e("div", { className: "timer-bar", style: { animationDuration: `${levelConfig[currentLevel-1].memoryTime}ms` } }))); };
         
         const renderContent = () => {
             switch (gameStatus) {
-                case 'TITLE': return e("div", { className: "title-screen" }, e("h1", null, "看看柑仔店有什麼？"), e("p", null, "九宮格拼圖挑戰"), e("button", { onClick: startGame }, "開始遊戲"));
-                case 'PLAYING': return e('div', { className: "memory-game-layout" }, renderPuzzle(), renderGameScreen());
-                case 'PUZZLE_COMPLETE': return e("div", { className: 'game-over-screen' }, e("h2", null, "恭喜通關！"), e('div', { className: 'puzzle-container' }, e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name), e('div', { className: 'puzzle-grid complete', style: { backgroundImage: `url(${puzzleData.image})` } })), e("p", null, `您成功拼湊了「${puzzleData.name}」的完整記憶！`), e("button", { onClick: () => generatePoster(puzzleData) }, "生成分享海報"), e("button", { onClick: onComplete }, "完成拼圖"));
-                default: return e("div", null, "載入中...");
+                case 'TITLE':
+                    return e("div", { className: "title-screen" }, e("h1", null, "看看柑仔店有什麼？"), e("p", null, "九宮格拼圖挑戰"), e("button", { onClick: startGame }, "開始遊戲"));
+                case 'PLAYING':
+                    return e('div', { className: "memory-game-layout" }, renderPuzzle(), renderGameScreen());
+                case 'PUZZLE_COMPLETE':
+                    return e("div", { className: 'game-over-screen' },
+                        e("h2", null, "恭喜通關！"),
+                        e('div', { className: 'puzzle-container' },
+                            e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name),
+                            e('div', {
+                                className: 'puzzle-grid complete',
+                                style: { backgroundImage: `url(${puzzleData.image})` }
+                            })
+                        ),
+                        e("p", null, `您成功拼湊了「${puzzleData.name}」的完整記憶！`),
+                        e("button", { onClick: () => generatePoster(puzzleData) }, "生成分享海報"),
+                        e("button", { onClick: onComplete }, "完成拼圖")
+                    );
+                default:
+                    return e("div", null, "載入中...");
             }
         };
         return e("div", { className: "main-frame" }, renderContent());
