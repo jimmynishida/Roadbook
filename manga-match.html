@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>漫畫翻牌配對</title>
+  <style>
+    /* --- 基礎樣式 --- */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "Helvetica Neue", sans-serif;
+      background-color: #3D2B1F; /* 深棕色，符合復古書店氛圍 */
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #F5F5DC; /* 米色文字 */
+    }
+
+    /* --- 遊戲主容器 --- */
+    #game-container {
+      width: 100%;
+      max-width: 450px;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.2em;
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #FFD700; /* 金色標題，增加懷舊感 */
+      text-shadow: 2px 2px 3px #000;
+    }
+
+    #level-info {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+      min-height: 25px;
+    }
+    
+    /* --- 卡牌區域 --- */
+    #game-board {
+      display: grid;
+      gap: 10px; /* 減小間距，更像書架 */
+      justify-content: center;
+      perspective: 1000px; /* 增加3D翻轉效果的透視 */
+    }
+
+    /* --- 卡牌樣式 --- */
+    .card {
+      width: 90px;
+      height: 120px;
+      cursor: pointer;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+    .card.flipped {
+      transform: rotateY(180deg);
+      cursor: default;
+    }
+    .card.matched {
+      transform: rotateY(180deg);
+      opacity: 0.5; /* 匹配後淡出，但不消失 */
+      cursor: default;
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden; /* 隱藏翻轉後的背面 */
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .card-back {
+      background-color: #6F4E37; /* 書本封皮的棕色 */
+      border: 4px solid #F5F5DC;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2em;
+      color: #F5F5DC;
+    }
+
+    .card-front {
+      background-color: #fff;
+      transform: rotateY(180deg); /* 預先翻轉180度 */
+    }
+
+    /* --- 按鈕樣式 --- */
+    #feedback-area {
+        margin-top: 20px;
+        min-height: 50px;
+    }
+    .game-btn {
+      display: none;
+      padding: 12px 30px;
+      font-size: 1.3em;
+      font-weight: bold;
+      background-color: #AF4425; /* 沿用主遊戲風格的磚紅色 */
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .game-btn:active {
+        transform: scale(0.96);
+    }
+  </style>
+</head>
+<body>
+  
+  <div id="game-container">
+    <h1>租書店挑戰</h1>
+    <div id="level-info"></div>
+    <div id="game-board"></div>
+    <div id="feedback-area">
+        <button id="next-level-btn" class="game-btn">下一關</button>
+    </div>
+  </div>
+
+  <script>
+    // --- 遊戲設定 ---
+    const TOTAL_LEVELS = 3; // 總共玩3關
+    // 漫畫圖片庫 (請將 'assets/manga/mangaX.jpg' 替換成您的圖片路徑)
+    // 建議圖片尺寸為正方形或統一的直式矩形
+    const MANGA_IMAGES = [
+      "assets/manga/manga1.jpg", "assets/manga/manga2.jpg", "assets/manga/manga3.jpg", 
+      "assets/manga/manga4.jpg", "assets/manga/manga5.jpg", "assets/manga/manga6.jpg",
+      "assets/manga/manga7.jpg", "assets/manga/manga8.jpg"
+    ];
+
+    // --- 元素獲取 ---
+    const gameBoard = document.getElementById('game-board');
+    const levelInfo = document.getElementById('level-info');
+    const nextLevelBtn = document.getElementById('next-level-btn');
+    const feedbackArea = document.getElementById('feedback-area');
+
+    // --- 遊戲狀態變數 ---
+    let currentLevel = 1;
+    let imagesForLevel = [];
+    let cards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let lockBoard = false; // 用於防止在配對檢查時重複點擊
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // 根據關卡決定需要幾組圖片
+    function getImagesForLevel(level) {
+      const pairCount = level + 1; // 第1關2組，第2關3組，第3關4組
+      // 從圖片庫中隨機選取所需數量的圖片
+      return shuffle([...MANGA_IMAGES]).slice(0, pairCount);
+    }
+
+    function createCards(imgs) {
+      const cardImages = shuffle([...imgs, ...imgs]);
+      return cardImages.map((imgSrc, index) => ({
+        id: index,
+        image: imgSrc,
+        isFlipped: false,
+        isMatched: false,
+      }));
+    }
+
+    function renderBoard() {
+      gameBoard.innerHTML = '';
+      const cardCount = cards.length;
+      // 自動計算行列，讓排版更美觀
+      const cols = cardCount === 4 ? 2 : (cardCount === 8 ? 4 : 3);
+      gameBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+      cards.forEach(cardData => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card';
+        if (cardData.isFlipped) cardDiv.classList.add('flipped');
+        if (cardData.isMatched) cardDiv.classList.add('matched');
+        
+        cardDiv.innerHTML = `
+          <div class="card-face card-back"><span>📖</span></div>
+          <div class="card-face card-front" style="background-image: url('${cardData.image}')"></div>
+        `;
+
+        if (!cardData.isMatched) {
+            cardDiv.addEventListener('click', () => flipCard(cardData));
+        }
+        
+        gameBoard.appendChild(cardDiv);
+      });
+    }
+
+    function flipCard(clickedCard) {
+      if (lockBoard || clickedCard.isFlipped || flippedCards.length >= 2) return;
+      
+      clickedCard.isFlipped = true;
+      flippedCards.push(clickedCard);
+      renderBoard();
+
+      if (flippedCards.length === 2) {
+        lockBoard = true;
+        setTimeout(checkForMatch, 1000);
+      }
+    }
+
+    function checkForMatch() {
+      const [cardA, cardB] = flippedCards;
+      if (cardA.image === cardB.image) {
+        cardA.isMatched = true;
+        cardB.isMatched = true;
+        matchedPairs++;
+      } else {
+        cardA.isFlipped = false;
+        cardB.isFlipped = false;
+      }
+      
+      flippedCards = [];
+      lockBoard = false;
+      renderBoard();
+
+      // 檢查關卡是否完成
+      if (matchedPairs === imagesForLevel.length) {
+        if (currentLevel < TOTAL_LEVELS) {
+            levelInfo.textContent = '太厲害了！你都記得！';
+            nextLevelBtn.style.display = 'inline-block';
+        } else {
+            // 所有關卡完成
+            levelInfo.textContent = '恭喜！你找回了所有漫畫的回憶！';
+            // 【★★★ 整合關鍵 ★★★】
+            // 向父視窗發送完成訊息
+            setTimeout(() => {
+                window.parent.postMessage('manga-match-complete', '*');
+            }, 1500); // 延遲1.5秒，讓玩家看到勝利訊息
+        }
+      }
+    }
+
+    function startLevel(level) {
+      currentLevel = level;
+      imagesForLevel = getImagesForLevel(level);
+      cards = createCards(imagesForLevel);
+      flippedCards = [];
+      matchedPairs = 0;
+      lockBoard = false;
+
+      levelInfo.textContent = `第 ${level} 層書架 - 找出 ${imagesForLevel.length} 對漫畫`;
+      nextLevelBtn.style.display = 'none';
+      renderBoard();
+    }
+
+    nextLevelBtn.addEventListener('click', () => {
+        startLevel(currentLevel + 1);
+    });
+
+    // --- 遊戲啟動 ---
+    startLevel(1);
+
+  </script>
+</body>
+</html>

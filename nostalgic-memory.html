@@ -8,16 +8,25 @@
     /* ... 其他 CSS ... */
     .shelf-slot { 
       /* ... 其他樣式 ... */
-      padding: 10px; /* 增加內邊距給圖片空間 */
-      box-sizing: border-box;
-    }
-    .item-realistic {
-      /* ★★★ 修正核心：讓圖片100%填滿父容器 ★★★ */
-      width: 100%;
-      height: 100%;
-      object-fit: cover; /* 確保圖片等比例縮放不變形 */
-      filter: drop-shadow(4px 4px 6px rgba(0,0,0,0.4));
-    }
+     background-color: rgba(0, 0, 0, 0.2); /* 新增淺色背景，讓空白區域不突兀 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px; /* 給圖片一點內邊距 */
+    box-sizing: border-box;
+}
+
+.item-realistic {
+    width: 100%;
+    height: 100%;
+    
+    /* ▼▼▼ 核心修改：使用 contain 確保圖片完整顯示 ▼▼▼ */
+    object-fit: contain;
+    
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+}
     /* ... 其他 CSS ... */
   </style>
 </head>

@@ -1,4 +1,5 @@
-// 等待網頁所有元素載入完成後再執行
+// 【★★★ game.js 最終完整版 ★★★】
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 統一宣告所有網頁元素 ---
@@ -19,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endImageContainer = document.getElementById('end-image-container');
 
     // ========================================================
-    // --- 「記憶寶物架」小遊戲的完整程式碼 ---
+    // --- 「記憶寶物架」小遊戲 React 程式碼 ---
     // ========================================================
     const e = React.createElement;
     const nostalgicItems = [ { name: "Game Boy", img: "assets/gameboy.jpeg", value: 2800, category: "electronics" }, { name: "B.B. Call 傳呼機", img: "assets/bb-call.webp", value: 1800, category: "electronics" }, { name: "Tamagotchi 電子雞", img: "assets/tamagotchi.jpeg", value: 700, category: "toy" }, { name: "王子麵", img: "assets/prince-noodles.png", value: 3, category: "snack" }, { name: "養樂多", img: "assets/yakult.jpg", value: 2, category: "snack" }, { name: "箭牌口香糖", img: "assets/doublemint.jpeg", value: 7, category: "snack" }, { name: "乖乖", img: "assets/guai-guai.png", value: 5, category: "snack" }, { name: "森永牛奶糖", img: "assets/morinaga-caramel.png", value: 5, category: "snack" }, { name: "黑松沙士", img: "assets/sarsaparilla.png", value: 7, category: "snack" } ];
@@ -31,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const sfxElements = { coin: () => document.getElementById("sfx-coin"), wrong: () => document.getElementById("sfx-wrong"), vhs: () => document.getElementById("sfx-vhs"), };
     function playSfx(name) { const el = sfxElements[name](); if (el) { el.currentTime = 0; el.play().catch(()=>{}); } }
     function generatePoster(puzzle) { const canvas = document.createElement('canvas'); canvas.width = 600; canvas.height = 800; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#1A202C'; ctx.fillRect(0, 0, 600, 800); const img = new Image(); img.crossOrigin = 'Anonymous'; img.src = puzzle.image; img.onload = () => { ctx.drawImage(img, 50, 150, 500, 500); ctx.fillStyle = '#F7FAFC'; ctx.font = 'bold 48px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('記憶解鎖！', 300, 80); ctx.font = '24px sans-serif'; ctx.fillText(`我成功拼湊了「${puzzle.name}」`, 300, 700); const link = document.createElement('a'); link.download = `我的懷舊記憶-${puzzle.id}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }; img.onerror = () => { alert('海報圖片載入失敗'); }; }
-    
     function MemoryPuzzleApp(props) {
         const { onComplete, puzzleId, category } = props;
         const [gameStatus, setGameStatus] = React.useState("TITLE");
@@ -53,96 +53,70 @@ document.addEventListener('DOMContentLoaded', () => {
         const renderGameScreen = () => { if (phase === 'IDLE') return e('div', {className: 'feedback'}, feedback); const isMemoryPhase = phase === 'MEMORY'; return e(React.Fragment, null, e("div", { style: { color: isMemoryPhase ? "#E383B9" : "#6EDCFF", minHeight: '40px' } }, isMemoryPhase ? "記住貨架上的寶物吧！" : prompt), isMemoryPhase ? e("div", { className: "shelf" }, shelfItems.map((item, i) => e("div", { key: i, className: "shelf-slot" }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : (mode === "FIND_DIFF" ? e("div", { className: "shelf" }, hiddenShelfItems.map((item, i) => e("div", { key: i, className: "shelf-slot", style:{cursor:'pointer'}, onClick: () => handleAnswer(i === answer) }, item && e("img", { src: item.img, alt: item.name, className: "item-realistic" })))) : e("div", {style: {textAlign: 'center'}}, questionData.choices.map((c, i) => e("button", { key: i, className: "price-btn", onClick: () => handleAnswer(i === answer) }, c)))), isMemoryPhase && e("div", { className: "timer-bar-container" }, e("div", { className: "timer-bar", style: { animationDuration: `${levelConfig[currentLevel-1].memoryTime}ms` } }))); };
         const renderContent = () => {
             switch (gameStatus) {
-                case 'TITLE':
-                    return e("div", { className: "title-screen" }, e("h1", null, "看看柑仔店有什麼？"), e("p", null, "九宮格拼圖挑戰"), e("button", { onClick: resetGame }, "開始遊戲"));
-                case 'PLAYING':
-                    return e('div', { className: "memory-game-layout" }, renderPuzzle(), renderGameScreen());
-                case 'PUZZLE_COMPLETE':
-                    return e("div", { className: 'game-over-screen' },
-                        e("h2", null, "恭喜通關！"),
-                        e('div', { className: 'puzzle-container' },
-                            e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name),
-                            e('div', {
-                                className: 'puzzle-grid complete',
-                                style: { backgroundImage: `url(${puzzleData.image})` }
-                            })
-                        ),
-                        e("p", null, `您成功拼湊了「${puzzleData.name}」的完整記憶！`),
-                        e("button", { onClick: () => generatePoster(puzzleData) }, "生成分享海報"),
-                        e("button", { onClick: onComplete }, "完成拼圖")
-                    );
-                default:
-                    return e("div", null, "載入中...");
+                case 'TITLE': return e("div", { className: "title-screen" }, e("h1", null, "看看柑仔店有什麼？"), e("p", null, "九宮格拼圖挑戰"), e("button", { onClick: resetGame }, "開始遊戲"));
+                case 'PLAYING': return e('div', { className: "memory-game-layout" }, renderPuzzle(), renderGameScreen());
+                case 'PUZZLE_COMPLETE': return e("div", { className: 'game-over-screen' }, e("h2", null, "恭喜通關！"), e('div', { className: 'puzzle-container' }, e('p', { style: { color: '#fff', fontSize: '1.1em' } }, puzzleData.name), e('div', { className: 'puzzle-grid complete', style: { backgroundImage: `url(${puzzleData.image})` } })), e("p", null, `您成功拼湊了「${puzzleData.name}」的完整記憶！`), e("button", { onClick: () => generatePoster(puzzleData) }, "生成分享海報"), e("button", { onClick: onComplete }, "完成拼圖"));
+                default: return e("div", null, "載入中...");
             }
         };
         return e("div", { className: "main-frame" }, renderContent());
     }
-
-    // --- 遊戲地圖資料 ---
-    const mapData = {
-        'start': { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門',     next: 'choice1' },
-        'choice1': { type: 'choice', pos: { x: 50, y: 78 }, text: '要去哪裡呢？', choices: [ { text: '去左邊的「柑仔店」', target: 'gamadim' }, { text: '去右邊的「電動間」', target: 'arcade', setFlag: {"playedArcade": true} } ] },
-        'gamadim': { type: 'event',  pos: { x: 30, y: 65 }, text: '在柑仔店買了零食',   next: 'gamadim_puzzle'  },
-        "gamadim_puzzle": { "type": "minigame-memory-puzzle", "pos": { "x": 30, "y": 60 }, "puzzleId": "puz01", "next": "choice2", "categoryFilter": "snack", "anchorY": 0.5 },
-        'arcade': { type: 'event',  pos: { x: 70, y: 55 }, text: '在電動間打遊戲',    next: 'choice2' },
-        'choice2': { type: 'choice', pos: { x: 50, y: 45 }, text: '天色晚了，回家吧...', choices: [ { text: '走大路回家', target: 'final_check' }, { text: '跟朋友在大樹下道別', target: 'tree' } ], "anchorY": 0.8 },
-        'tree': { type: 'event',  pos: { x: 70, y: 35 }, text: '在大樹下玩耍道別',     next: 'end_friends' },
-        'final_check': { "type": "conditional", "pos": { "x": 60, "y": 12 }, "checkFlag": "playedArcade", "target_if_true": "end_home_late", "target_if_false": "end_home_normal" },
-        'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 60, y: 10 }, title: '溫暖的晚餐', description: '雖然平凡，但家裡的飯菜香和等待的燈光，就是一天中最安穩的時刻。這是最簡單的幸福。', img: '#1.jpeg' },
-        'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 60, y: 10 }, title: '媽媽的咆哮', description: '「又跑到哪裡瘋啦！這麼晚才回來！」雖然被罵了一頓，但聞到飯菜香，心還是暖的。', img: '#2.jpeg' },
-        'end_friends': { type: 'end', id: 'end_friends', pos: { x: 75, y: 15 }, title: '回家也是一個人', description: '爸媽都不在家，只知道忙工作...', img: '#3.png' }
-    };
-
+    
+    // --- 遊戲資料與狀態 ---
     const MAP_HEIGHT = 2800;
     let playerPath = [];
-    let storyFlags = {};
+    const mapData = {
+        'start': { type: 'event',  pos: { x: 50, y: 92 }, text: '放學後，走出校門...', next: 'gamadim' },
+        'gamadim': { type: 'event',  pos: { x: 60, y: 50 }, text: '走，先去柑仔店',   next: 'gamadim_puzzle'  },
+        'gamadim_puzzle': { type: "minigame-memory-puzzle", pos: { x: 28, y: 78 }, next: 'choice_activities', categoryFilter: "snack" },
+        'choice_activities': { type: 'choice', pos: { x: 50, y: 60 }, text: '要去哪裡呢？', choices: [ { text: '去看漫畫', target: 'bookstore' }, { text: '去「電動間」打遊戲', target: 'arcade' }, { text: '去廟口看「布袋戲」', target: 'yataixi' } ] },
+        'bookstore': { type: 'minigame-manga-match', pos: { x: 25, y: 45 }, text: '哇！幽遊白書有新的了', gameUrl: 'manga-match.html', next: 'random_end_router'},
+        'arcade': { type: 'minigame-arcade', pos: { x: 75, y: 45 }, text: '走，打電動去', gameUrl: 'neon-strike.html', next: 'random_end_router'},
+        'yataixi': { type: 'event', pos: { x: 50, y: 30 }, text: '史艷文真厲害...', next: 'random_end_router'},
+        'random_end_router': {
+            type: 'conditional_random',
+            pos: { x: 50, y: 20 },
+            possible_ends: [ 'end_home_normal', 'end_home_late', 'end_home_alone' ]
+        },
+        'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 50, y: 10 }, title: '我回來了！', description: '回到家，家人早已準備好熱騰騰的飯菜，平凡的日常最是溫暖。', img: 'assets/end_home_normal.jpeg' },
+        'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 75, y: 15 }, title: '媽媽：「又跑到哪裡瘋啦！」', description: '「這麼晚才回來！」雖然被媽媽念了一頓，但聞到熟悉的飯菜香，心還是暖的。', img: 'assets/end_home_late.jpeg' },
+        'end_home_alone': { type: 'end', id: 'end_home_alone', pos: { x: 25, y: 15 }, title: '爸媽還是沒回來...', description: '回到家，才想起爸媽今晚有事不回來。打開燈，空無一人的客廳更顯寂靜...', img: 'assets/end_home_alone.png' }
+    };
 
-    // --- 核心邏輯 (基於 async/await) ---
+    // --- 核心遊戲函式 ---
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    function moveToNode(nodeId) {
+    function handleIframeGame(nodeData, completionMessage) {
         return new Promise(resolve => {
-            const nodeData = mapData[nodeId];
-            if (!nodeData) { console.error("Node not found:", nodeId); return; }
-            const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
-            const anchorRatio = nodeData.anchorY || 0.85;
-            const scrollAmount = targetY - (window.innerHeight * anchorRatio);
-            const onTransitionEnd = () => { scrollMap.removeEventListener('transitionend', onTransitionEnd); resolve(); };
-            scrollMap.addEventListener('transitionend', onTransitionEnd, { once: true });
-            scrollMap.style.transition = 'transform 3s ease-in-out';
-            scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
+            const minigameContainer = document.getElementById('minigame-container');
+            const iframe = document.createElement('iframe');
+            iframe.src = nodeData.gameUrl;
+            iframe.style.width = '100%'; iframe.style.height = '100%'; iframe.style.border = 'none';
+            minigameContainer.innerHTML = '';
+            minigameContainer.appendChild(iframe);
+            gameArea.classList.add('hidden');
+            minigameContainer.classList.remove('hidden');
+            const messageHandler = function(event) {
+                if (event.source !== iframe.contentWindow) return;
+                if (event.data === completionMessage) {
+                    window.removeEventListener('message', messageHandler);
+                    minigameContainer.classList.add('hidden');
+                    gameArea.classList.remove('hidden');
+                    resolve();
+                }
+            };
+            window.addEventListener('message', messageHandler);
         });
     }
 
-    function showChoice(nodeData) {
-        choiceText.textContent = nodeData.text;
-        choiceButtons.innerHTML = '';
-        nodeData.choices.forEach(choice => {
-            const button = document.createElement('button');
-            button.className = 'choice-btn';
-            button.textContent = choice.text;
-            button.onclick = () => {
-                if (choice.setFlag) {
-                    Object.assign(storyFlags, choice.setFlag);
-                    console.log("故事標籤更新:", storyFlags);
-                }
-                choiceOverlay.classList.add('hidden');
-                playerPath.push(choice.target);
-                runGameLogic(choice.target);
-            };
-            choiceButtons.appendChild(button);
-        });
-        choiceOverlay.classList.remove('hidden');
-    }
-    
     function handleMemoryPuzzle(nodeData) {
         return new Promise(resolve => {
             const minigameContainer = document.getElementById('minigame-container');
             const minigameRoot = document.getElementById('minigame-root');
             const root = ReactDOM.createRoot(minigameRoot);
             const props = {
-                puzzleId: nodeData.puzzleId,
                 category: nodeData.categoryFilter,
+                puzzleId: puzzleData.id, 
                 onComplete: () => {
                     root.unmount(); 
                     minigameContainer.classList.add('hidden');
@@ -156,13 +130,77 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 在 game.js 中，找到並用這段程式碼替換舊的 moveToNode 函式
+
+function moveToNode(nodeId) {
+    return new Promise(resolve => {
+        const nodeData = mapData[nodeId];
+        if (!nodeData || !nodeData.pos) { 
+            console.error("Node not found or has no position:", nodeId); 
+            return resolve();
+        }
+
+        const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
+        const anchorRatio = nodeData.anchorY || 0.85;
+        const scrollAmount = targetY - (window.innerHeight * anchorRatio);
+
+        // 設定一個計時器作為安全鎖，確保即使 transitionend 事件沒觸發，也能繼續
+        const safetyTimeout = setTimeout(() => {
+            console.log(`Safety timeout triggered for node: ${nodeId}`);
+            scrollMap.removeEventListener('transitionend', onTransitionEnd);
+            resolve();
+        }, 3100); // 比動畫時間稍長 (3000ms + 100ms)
+
+        const onTransitionEnd = () => { 
+            clearTimeout(safetyTimeout); // 動畫成功結束，清除安全鎖
+            scrollMap.removeEventListener('transitionend', onTransitionEnd); 
+            resolve(); 
+        };
+
+        scrollMap.addEventListener('transitionend', onTransitionEnd, { once: true });
+        scrollMap.style.transition = 'transform 3s ease-in-out';
+        scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
+    });
+}
+
+    function showChoice(nodeData) {
+        choiceText.textContent = nodeData.text;
+        choiceButtons.innerHTML = ''; 
+        choiceOverlay.classList.remove('hidden');
+        const activeNodes = []; 
+        function cleanupChoiceListeners() {
+            activeNodes.forEach(({ element, handler }) => {
+                element.classList.remove('choice-active');
+                element.removeEventListener('click', handler);
+            });
+            choiceOverlay.classList.add('hidden');
+        }
+        nodeData.choices.forEach(choice => {
+            const targetNodeId = choice.target;
+            const targetNodeElement = document.querySelector(`.node[data-node-id="${targetNodeId}"]`);
+            if (targetNodeElement) {
+                targetNodeElement.classList.add('choice-active'); 
+                const choiceHandler = () => {
+                    cleanupChoiceListeners();
+                    playerPath.push(targetNodeId);
+                    runGameLogic(targetNodeId);
+                };
+                targetNodeElement.addEventListener('click', choiceHandler, { once: true });
+                activeNodes.push({ element: targetNodeElement, handler: choiceHandler });
+            } else {
+                console.error(`錯誤：在 'showChoice' 中找不到目標節點 DOM 元素，ID: ${targetNodeId}`);
+            }
+        });
+    }
+
     async function runGameLogic(nodeId) {
         const nodeData = mapData[nodeId];
-        if (!nodeData) {
-            console.error(`執行節點錯誤: 找不到 ID 為 "${nodeId}" 的節點。`);
-            return;
+        if (!nodeData) { console.error(`執行節點錯誤: 找不到 ID 為 "${nodeId}" 的節點。`); return; }
+        
+        if (nodeData.pos) {
+            await moveToNode(nodeId);
         }
-        await moveToNode(nodeId);
+
         switch (nodeData.type) {
             case 'event': 
                 await delay(2000); 
@@ -172,37 +210,35 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'choice': 
                 showChoice(nodeData); 
                 break;
+            case 'conditional_random':
+                const possibleEnds = nodeData.possible_ends;
+                const randomIndex = Math.floor(Math.random() * possibleEnds.length);
+                const nextNodeId = possibleEnds[randomIndex];
+                runGameLogic(nextNodeId);
+                break;
             case 'minigame-memory-puzzle': 
                 await handleMemoryPuzzle(nodeData); 
+                await delay(50);
                 playerPath.push(nodeData.next);
                 runGameLogic(nodeData.next); 
                 break;
-            case 'conditional':
-                if (storyFlags[nodeData.checkFlag]) {
-                    runGameLogic(nodeData.target_if_true);
-                } else {
-                    runGameLogic(nodeData.target_if_false);
-                }
+            case 'minigame-arcade':
+                await handleIframeGame(nodeData, 'arcade-game-complete');
+                await delay(50);
+                playerPath.push(nodeData.next);
+                runGameLogic(nodeData.next);
+                break;
+            case 'minigame-manga-match':
+                await handleIframeGame(nodeData, 'manga-match-complete');
+                await delay(50);
+                playerPath.push(nodeData.next);
+                runGameLogic(nodeData.next);
                 break;
             case 'end': 
                 await delay(1500); 
                 showEndScreen(nodeData); 
                 break;
         }
-    }
-
-    function initGame() {
-        playerPath = [];
-        storyFlags = {};
-        scrollMap.innerHTML = '';
-        gameArea.classList.remove('hidden');
-        startScreen.classList.add('hidden');
-        endScreen.classList.add('hidden');
-        scrollMap.style.transition = 'none';
-        scrollMap.style.transform = 'translateY(0px)';
-        scrollMap.style.height = `${MAP_HEIGHT}px`;
-        playerPath.push('start');
-        setTimeout(() => runGameLogic('start'), 100);
     }
     
     function showEndScreen(endNode) {
@@ -213,9 +249,60 @@ document.addEventListener('DOMContentLoaded', () => {
         endScreen.classList.remove('hidden');
     }
 
+    function initGame() {
+        playerPath = [];
+        scrollMap.innerHTML = '';
+        gameArea.classList.remove('hidden');
+        startScreen.classList.add('hidden');
+        endScreen.classList.add('hidden');
+        scrollMap.style.transition = 'none';
+        scrollMap.style.transform = 'translateY(0px)';
+        scrollMap.style.height = `${MAP_HEIGHT}px`;
+
+        Object.keys(mapData).forEach(nodeId => {
+            const nodeData = mapData[nodeId];
+            if (nodeData.pos) {
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = 'node';
+                nodeDiv.dataset.nodeId = nodeId; 
+                nodeDiv.style.left = `${nodeData.pos.x}%`;
+                nodeDiv.style.top = `${nodeData.pos.y}%`;
+                
+                if (nodeData.type !== 'end' && nodeData.type !== 'conditional_random') {
+                    const nodeImg = document.createElement('img');
+                    nodeImg.src = `assets/${nodeId}.png`; 
+                    nodeImg.alt = nodeData.text || nodeId;
+                    
+                    const nodeText = document.createElement('p');
+                    nodeText.textContent = nodeData.text || '';
+
+                    nodeDiv.appendChild(nodeImg);
+                    nodeDiv.appendChild(nodeText);
+                }
+                scrollMap.appendChild(nodeDiv);
+            }
+        });
+        
+        const homeIconDiv = document.createElement('div');
+        homeIconDiv.className = 'node';
+        homeIconDiv.style.left = '50%';
+        homeIconDiv.style.top = '5%';
+        const homeImg = document.createElement('img');
+        homeImg.src = 'assets/home.png';
+        homeImg.style.width = '100px';
+        homeImg.style.height = '100px';
+        homeIconDiv.appendChild(homeImg);
+        scrollMap.appendChild(homeIconDiv);
+        
+        const startNode = 'start';
+        playerPath.push(startNode);
+        setTimeout(() => runGameLogic(startNode), 100);
+    }
+
     // --- 事件綁定 ---
     startButton.addEventListener('click', initGame);
     restartButton.addEventListener('click', () => { window.location.href = window.location.origin + window.location.pathname; });
     if (shareButton) { shareButton.onclick = async () => { const endNode = mapData[playerPath[playerPath.length - 1]]; const shareData = { title: '我在「指尖的時光路書」走出了這個结局！', text: `我的青春回憶是「${endNode.title}」，也來走走看你的吧！`, url: window.location.origin + window.location.pathname }; try { if (navigator.share) { await navigator.share(shareData); } else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享給朋友！'); } } catch (err) { console.error('分享失敗:', err); } }; }
     if (createStoryButton) { createStoryButton.onclick = () => { const note = memoryInput.value.trim(); if (!note) { alert('請先寫下你的回憶註解！'); return; } const storyData = { path: playerPath, note: note }; const encodedStory = btoa(JSON.stringify(storyData)); const storyUrl = `${window.location.origin}${window.location.pathname}?story=${encodedStory}`; navigator.clipboard.writeText(storyUrl).then(() => { alert('您的專屬故事連結已複製！快分享給您的孩子或朋友吧！'); }).catch(err => { alert('複製失敗，請手動複製以下連結：\n' + storyUrl); }); }; }
+
 });

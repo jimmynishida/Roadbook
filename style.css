@@ -1,11 +1,10 @@
 /* --- 全局與無齡感(適老化)基礎設計 --- */
 body {
-    /* 選擇在各種裝置上都表現良好的無襯線字體，並優先使用微軟正黑體 */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "Helvetica Neue", sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #333; /* 深色背景可減少螢幕眩光 */
-    -webkit-user-select: none; /* 防止長按選取文字 */
+    background-color: #333;
+    -webkit-user-select: none;
     user-select: none;
 }
 
@@ -13,11 +12,11 @@ body {
     position: relative;
     width: 100vw;
     height: 100vh;
-    max-width: 450px; /* 在電腦上模擬手機寬度 */
+    max-width: 450px;
     margin: 0 auto;
-    background-color: #F5F5DC; /* 柔和的米色，不刺眼，像舊紙張 */
+    background-color: #F5F5DC;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    overflow: hidden; /* 確保內容不會超出遊戲畫面 */
+    overflow: hidden;
 }
 
 .screen {
@@ -29,7 +28,7 @@ body {
     padding: 25px;
     box-sizing: border-box;
     height: 100%;
-    color: #3D2B1F; /* 深棕色文字，對比度高 */
+    color: #3D2B1F;
 }
 
 .hidden {
@@ -44,11 +43,11 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
 
 /* --- 按鈕設計 (大、高對比、易點擊) --- */
 .btn {
-    font-size: 1.6em; /* 字體夠大 */
+    font-size: 1.6em;
     font-weight: bold;
-    padding: 18px 35px; /* 按鈕本身也夠大 */
+    padding: 18px 35px;
     border: none;
-    background-color: #AF4425; /* 醒目的磚紅色 */
+    background-color: #AF4425;
     color: white;
     border-radius: 12px;
     cursor: pointer;
@@ -56,7 +55,7 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     transition: transform 0.2s;
 }
 .btn:active {
-    transform: scale(0.96); /* 點擊時有回饋感 */
+    transform: scale(0.96);
 }
 
 /* --- 遊戲主場景 --- */
@@ -71,15 +70,10 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     position: absolute;
     width: 100%;
     top: 0; 
-    background-image: url('map.jpg');
+    background-image: url('assets/map.jpg');
     background-color: #fdf5e6;
     background-repeat: no-repeat;
-    
-    /* 【★★★ 根本問題修正 ★★★】 */
-    /* 將 '100% auto' 改為 '100% 100%' */
-    /* 強制背景圖的高和寬都100%鋪滿它所在的容器(div) */
     background-size: 100% 100%;
-    
     background-position: top center;
 }
 
@@ -90,13 +84,13 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px; /* 圖片和文字的間距 */
+    gap: 8px;
 }
 .node img {
     width: 75px;
     height: 75px;
-    border: 4px solid #6F4E37; /* 復古相框效果 */
-    border-radius: 50%; /* 圓形圖示更柔和 */
+    border: 4px solid #6F4E37;
+    border-radius: 50%;
     background-color: white;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
@@ -104,7 +98,7 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     font-size: 1.1em;
     font-weight: bold;
     color: #3D2B1F;
-    background-color: rgba(255, 255, 255, 0.7); /* 文字背景半透明，確保在複雜背景下也清晰 */
+    background-color: rgba(255, 255, 255, 0.7);
     padding: 3px 8px;
     border-radius: 5px;
 }
@@ -115,7 +109,7 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     bottom: 0;
     left: 0;
     width: 100%;
-    background: linear-gradient(transparent, rgba(0,0,0,0.8)); /* 漸層背景更自然 */
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
     padding: 50px 20px 20px 20px;
     box-sizing: border-box;
     display: flex;
@@ -132,7 +126,7 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
 #choice-buttons {
     display: flex;
     flex-direction: column;
-    gap: 15px; /* 按鈕間距 */
+    gap: 15px;
     width: 90%;
 }
 .choice-btn {
@@ -140,7 +134,7 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     font-size: 1.3em;
     padding: 18px;
     border: 3px solid #fff;
-    background-color: rgba(23, 162, 184, 0.9); /* 半透明的藍綠色 */
+    background-color: rgba(23, 162, 184, 0.9);
     color: white;
     border-radius: 10px;
     cursor: pointer;
@@ -149,8 +143,8 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
 .choice-btn:active {
     background-color: #117a8b;
 }
-/* 在 style.css 文件末尾追加 */
 
+/* --- 結局畫面 --- */
 #social-area {
     margin: 20px 0;
     padding: 15px;
@@ -160,23 +154,20 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     flex-direction: column;
     gap: 20px;
 }
-
 .social-btn {
-    background-color: #3B7A57; /* 穩重的綠色 */
+    background-color: #3B7A57;
     font-size: 1.3em;
     padding: 15px 25px;
 }
 .social-btn:active {
     background-color: #2E5C42;
 }
-
 #memory-note-area {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
 }
-
 #memory-input {
     width: 100%;
     height: 80px;
@@ -184,11 +175,9 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     padding: 10px;
     border: 2px solid #ccc;
     border-radius: 8px;
-    font-family: inherit; /* 繼承body字體 */
+    font-family: inherit;
     box-sizing: border-box;
 }
-
-/* --- 結局畫面 --- */
 #end-image-container img {
     max-width: 80%;
     height: auto;
@@ -197,28 +186,8 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     box-shadow: 0 0 15px rgba(0,0,0,0.3);
     margin: 15px 0;
 }
-.puzzle-grid.complete {
-    background-size: cover;
-    background-position: center;
-    border: 2px solid #F9DF5B; /* 完成時給個高光邊框 */
-}
-.shelf-slot {
-    background-color: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 5px;
-    box-sizing: border-box;
-}
 
-.item-realistic {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* 使用 contain 確保圖片完整顯示 */
-    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
-}
+/* --- 小遊戲相關樣式 --- */
 .main-frame {
     position: relative;
     width: 95vw;
@@ -245,88 +214,67 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     text-align: center;
     color: white;
 }
-.memory-game-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+.memory-game-layout { display: flex; flex-direction: column; gap: 15px; }
+.puzzle-container { text-align: center; }
+.puzzle-grid { display: grid; grid-template-columns: repeat(3, 1fr); width: 150px; height: 150px; margin: 10px auto; border: 2px solid #aaa; background-color: #111; }
+.puzzle-piece { width: 50px; height: 50px; background-size: 300% 300%; opacity: 0.1; transition: opacity 0.5s; }
+.puzzle-piece.unlocked { opacity: 1; }
+.puzzle-grid.complete { background-size: contain; background-position: center; background-repeat: no-repeat; border: 2px solid #F9DF5B; }
+.shelf { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px; min-height: 80px; }
+.shelf-slot { background-color: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; aspect-ratio: 1 / 1; }
+.item-realistic { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5)); }
+.feedback { min-height: 40px; color: #F9DF5B; text-align: center; }
+.price-btn { margin: 5px; padding: 10px 15px; }
+.timer-bar-container { width: 100%; height: 8px; background-color: rgba(255,255,255,0.2); border-radius: 4px; }
+.timer-bar { width: 100%; height: 100%; background-color: #E383B9; border-radius: 4px; animation: timer-countdown linear forwards; }
+@keyframes timer-countdown { from { width: 100%; } to { width: 0%; } }
+
+/* --- 【★★★ 語法修正 ★★★】 --- */
+/* 以下所有規則都必須是獨立的，不能寫在其他大括號內部 */
+
+/* --- 小遊戲容器 (Modal/Overlay) --- */
+#minigame-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    background-color: #000;
 }
-.puzzle-container {
-    text-align: center;
+
+/* --- 選擇節點的互動提示 --- */
+.node.choice-active {
+    cursor: pointer;
+    filter: brightness(1.2);
 }
-.puzzle-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    width: 150px;
-    height: 150px;
-    margin: 10px auto;
-    border: 2px solid #aaa;
-    background-color: #111;
+
+.node.choice-active img {
+    border-color: #FFD700;
+    animation: pulse-animation 1.5s infinite;
 }
-.puzzle-piece {
-    width: 50px;
-    height: 50px;
-    background-size: 300% 300%;
-    opacity: 0.1;
-    transition: opacity 0.5s;
+
+/* 定義脈衝動畫 */
+@keyframes pulse-animation {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px 15px rgba(255, 215, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
 }
-.puzzle-piece.unlocked {
-    opacity: 1;
-}
-.puzzle-grid.complete {
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    border: 2px solid #F9DF5B;
-}
-.shelf {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-    padding: 10px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 5px;
-    min-height: 80px;
-}
-.shelf-slot {
-    background-color: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 5px;
+
+/* --- 優化節點圖示樣式 --- */
+.node img {
+    display: block;
+    background-color: #FFF8E7;
+    min-width: 75px;
+    min-height: 75px;
     box-sizing: border-box;
-    aspect-ratio: 1 / 1;
-}
-.item-realistic {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
-}
-.feedback {
-    min-height: 40px;
-    color: #F9DF5B;
-    text-align: center;
-}
-.price-btn {
-    margin: 5px;
-    padding: 10px 15px;
-}
-.timer-bar-container {
-    width: 100%;
-    height: 8px;
-    background-color: rgba(255,255,255,0.2);
-    border-radius: 4px;
-}
-.timer-bar {
-    width: 100%;
-    height: 100%;
-    background-color: #E383B9;
-    border-radius: 4px;
-    animation: timer-countdown linear forwards;
-}
-@keyframes timer-countdown {
-    from { width: 100%; }
-    to { width: 0%; }
 }
