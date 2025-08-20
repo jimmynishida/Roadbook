@@ -11,7 +11,8 @@ body {
 #game-container {
     position: relative;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh; 
+    height: calc(var(--vh, 1vh) * 100); 
     max-width: 450px;
     margin: 0 auto;
     background-color: #F5F5DC;
@@ -115,6 +116,12 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     display: flex;
     flex-direction: column;
     align-items: center;
+    pointer-events: none; /* 【★★★ 新增此行 ★★★】 */
+}
+
+/* 【★★★ 同時新增此規則 ★★★】 */
+#choice-overlay > * {
+    pointer-events: auto; /* 讓裡面的子元素(如文字)恢復可互動 */
 }
 #choice-overlay p {
     color: white;
@@ -220,17 +227,34 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
 .puzzle-piece { width: 50px; height: 50px; background-size: 300% 300%; opacity: 0.1; transition: opacity 0.5s; }
 .puzzle-piece.unlocked { opacity: 1; }
 .puzzle-grid.complete { background-size: contain; background-position: center; background-repeat: no-repeat; border: 2px solid #F9DF5B; }
-.shelf { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px; min-height: 80px; }
-.shelf-slot { background-color: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; aspect-ratio: 1 / 1; }
+.shelf {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 5px;
+    min-height: 80px;
+}
+.shelf-slot {
+    flex: 0 0 calc(33.333% - 10px);
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    box-sizing: border-box;
+    aspect-ratio: 1 / 1;
+}
 .item-realistic { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5)); }
 .feedback { min-height: 40px; color: #F9DF5B; text-align: center; }
 .price-btn { margin: 5px; padding: 10px 15px; }
 .timer-bar-container { width: 100%; height: 8px; background-color: rgba(255,255,255,0.2); border-radius: 4px; }
 .timer-bar { width: 100%; height: 100%; background-color: #E383B9; border-radius: 4px; animation: timer-countdown linear forwards; }
 @keyframes timer-countdown { from { width: 100%; } to { width: 0%; } }
-
-/* --- 【★★★ 語法修正 ★★★】 --- */
-/* 以下所有規則都必須是獨立的，不能寫在其他大括號內部 */
 
 /* --- 小遊戲容器 (Modal/Overlay) --- */
 #minigame-container {

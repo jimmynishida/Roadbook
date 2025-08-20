@@ -1,4 +1,4 @@
-// 【★★★ game.js 最終完整版 ★★★】
+// 【★★★ game.js 最終完整版 0820★★★】
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAP_HEIGHT = 2800;
     let playerPath = [];
     const mapData = {
-        'start': { type: 'event',  pos: { x: 50, y: 92 }, text: '放學了...', next: 'gamadim' },
-        'gamadim': { type: 'event',  pos: { x: 60, y: 50 }, text: '走，先去柑仔店',   next: 'gamadim_puzzle'  },
+        'start': { type: 'choice', pos: { x: 50, y: 92 }, text: '放學了...', choices: [ { text: '走，先去柑仔店', target: 'gamadim' } ] },
+        'gamadim': { type: 'choice', pos: { x: 60, y: 50 }, text: '在柑仔店門口', choices: [ { text: '進去看看有什麼好吃的', target: 'gamadim_puzzle' } ] },
         'gamadim_puzzle': { type: "minigame-memory-puzzle", pos: { x: 28, y: 78 }, next: 'choice_activities', categoryFilter: "snack" },
         'choice_activities': { type: 'choice', pos: { x: 50, y: 60 }, text: '要去哪裡呢？', choices: [ { text: '去看漫畫', target: 'bookstore' }, { text: '去「電動間」打遊戲', target: 'arcade' }, { text: '今天廟口有熱鬧', target: 'yataixi' } ] },
         'bookstore': { type: 'minigame-manga-match', pos: { x: 25, y: 45 }, text: '哇！幽遊白書有新的了', gameUrl: 'manga-match.html', next: 'random_end_router'},
@@ -130,44 +130,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 在 game.js 中，找到並用這段程式碼替換舊的 moveToNode 函式
+    function moveToNode(nodeId) {
+        return new Promise(resolve => {
+            const nodeData = mapData[nodeId];
+            if (!nodeData || !nodeData.pos) { 
+                console.error("Node not found or has no position:", nodeId); 
+                return resolve();
+            }
+            const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
+            const anchorRatio = nodeData.anchorY || 0.85;
+            const scrollAmount = targetY - (window.innerHeight * anchorRatio);
+            
+            const safetyTimeout = setTimeout(() => {
+                console.log(`Safety timeout triggered for node: ${nodeId}`);
+                scrollMap.removeEventListener('transitionend', onTransitionEnd);
+                resolve();
+            }, 3100);
 
-function moveToNode(nodeId) {
-    return new Promise(resolve => {
-        const nodeData = mapData[nodeId];
-        if (!nodeData || !nodeData.pos) { 
-            console.error("Node not found or has no position:", nodeId); 
-            return resolve();
-        }
+            const onTransitionEnd = () => { 
+                clearTimeout(safetyTimeout);
+                scrollMap.removeEventListener('transitionend', onTransitionEnd); 
+                resolve(); 
+            };
 
-        const targetY = (nodeData.pos.y / 100 * MAP_HEIGHT);
-        const anchorRatio = nodeData.anchorY || 0.85;
-        const scrollAmount = targetY - (window.innerHeight * anchorRatio);
+            scrollMap.addEventListener('transitionend', onTransitionEnd, { once: true });
+            scrollMap.style.transition = 'transform 3s ease-in-out';
+            scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
+        });
+    }
 
-        // 設定一個計時器作為安全鎖，確保即使 transitionend 事件沒觸發，也能繼續
-        const safetyTimeout = setTimeout(() => {
-            console.log(`Safety timeout triggered for node: ${nodeId}`);
-            scrollMap.removeEventListener('transitionend', onTransitionEnd);
-            resolve();
-        }, 3100); // 比動畫時間稍長 (3000ms + 100ms)
-
-        const onTransitionEnd = () => { 
-            clearTimeout(safetyTimeout); // 動畫成功結束，清除安全鎖
-            scrollMap.removeEventListener('transitionend', onTransitionEnd); 
-            resolve(); 
-        };
-
-        scrollMap.addEventListener('transitionend', onTransitionEnd, { once: true });
-        scrollMap.style.transition = 'transform 3s ease-in-out';
-        scrollMap.style.transform = `translateY(-${scrollAmount}px)`;
-    });
-}
-
-    function showChoice(nodeData) {
+    function showChoice(nodeData, currentNodeId) {
         choiceText.textContent = nodeData.text;
         choiceButtons.innerHTML = ''; 
         choiceOverlay.classList.remove('hidden');
         const activeNodes = []; 
+
         function cleanupChoiceListeners() {
             activeNodes.forEach(({ element, handler }) => {
                 element.classList.remove('choice-active');
@@ -175,22 +172,38 @@ function moveToNode(nodeId) {
             });
             choiceOverlay.classList.add('hidden');
         }
-        nodeData.choices.forEach(choice => {
-            const targetNodeId = choice.target;
-            const targetNodeElement = document.querySelector(`.node[data-node-id="${targetNodeId}"]`);
-            if (targetNodeElement) {
-                targetNodeElement.classList.add('choice-active'); 
+
+        if (nodeData.choices.length > 1) {
+            nodeData.choices.forEach(choice => {
+                const targetNodeId = choice.target;
+                const targetNodeElement = document.querySelector(`.node[data-node-id="${targetNodeId}"]`);
+                if (targetNodeElement) {
+                    targetNodeElement.classList.add('choice-active'); 
+                    const choiceHandler = () => {
+                        cleanupChoiceListeners();
+                        playerPath.push(targetNodeId);
+                        runGameLogic(targetNodeId);
+                    };
+                    targetNodeElement.addEventListener('click', choiceHandler, { once: true });
+                    activeNodes.push({ element: targetNodeElement, handler: choiceHandler });
+                } else {
+                    console.error(`錯誤：在 'showChoice' 中找不到目標節點 DOM 元素，ID: ${targetNodeId}`);
+                }
+            });
+        } else if (nodeData.choices.length === 1) {
+            const currentNodeElement = document.querySelector(`.node[data-node-id="${currentNodeId}"]`);
+            if (currentNodeElement) {
+                currentNodeElement.classList.add('choice-active');
+                const targetNodeId = nodeData.choices[0].target;
                 const choiceHandler = () => {
                     cleanupChoiceListeners();
                     playerPath.push(targetNodeId);
                     runGameLogic(targetNodeId);
                 };
-                targetNodeElement.addEventListener('click', choiceHandler, { once: true });
-                activeNodes.push({ element: targetNodeElement, handler: choiceHandler });
-            } else {
-                console.error(`錯誤：在 'showChoice' 中找不到目標節點 DOM 元素，ID: ${targetNodeId}`);
+                currentNodeElement.addEventListener('click', choiceHandler, { once: true });
+                activeNodes.push({ element: currentNodeElement, handler: choiceHandler });
             }
-        });
+        }
     }
 
     async function runGameLogic(nodeId) {
@@ -208,7 +221,7 @@ function moveToNode(nodeId) {
                 runGameLogic(nodeData.next); 
                 break;
             case 'choice': 
-                showChoice(nodeData); 
+                showChoice(nodeData, nodeId); 
                 break;
             case 'conditional_random':
                 const possibleEnds = nodeData.possible_ends;
@@ -292,7 +305,6 @@ function moveToNode(nodeId) {
         homeImg.style.width = '100px';
         homeImg.style.height = '100px';
         homeIconDiv.appendChild(homeImg);
-        scrollMap.appendChild(homeIconDiv);
         
         const startNode = 'start';
         playerPath.push(startNode);
