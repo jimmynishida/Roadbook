@@ -1,4 +1,4 @@
-// 【★★★ game.js 最終完整版 0820★★★】
+// 【★★★ game.js 最終完整版 - 支援多章節 ★★★】
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -8,19 +8,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const endScreen = document.getElementById('end-screen');
     const startButton = document.getElementById('start-button');
     const restartButton = document.getElementById('restart-button');
+    const nextChapterButton = document.getElementById('next-chapter-button'); // 新增
     const scrollMap = document.getElementById('scroll-map');
     const choiceOverlay = document.getElementById('choice-overlay');
     const choiceText = document.getElementById('choice-text');
-    const choiceButtons = document.getElementById('choice-buttons');
-    const shareButton = document.getElementById('share-button');
-    const memoryInput = document.getElementById('memory-input');
-    const createStoryButton = document.getElementById('create-story-button');
     const endTitle = document.getElementById('end-title');
     const endDescription = document.getElementById('end-description');
     const endImageContainer = document.getElementById('end-image-container');
 
     // ========================================================
-    // --- 「記憶寶物架」小遊戲 React 程式碼 ---
+    // --- 「記憶寶物架」小遊戲 React 程式碼 (不變) ---
     // ========================================================
     const e = React.createElement;
     const nostalgicItems = [ { name: "Game Boy", img: "assets/gameboy.jpeg", value: 2800, category: "electronics" }, { name: "B.B. Call 傳呼機", img: "assets/bb-call.webp", value: 1800, category: "electronics" }, { name: "Tamagotchi 電子雞", img: "assets/tamagotchi.jpeg", value: 700, category: "toy" }, { name: "王子麵", img: "assets/prince-noodles.png", value: 3, category: "snack" }, { name: "養樂多", img: "assets/yakult.jpg", value: 2, category: "snack" }, { name: "箭牌口香糖", img: "assets/doublemint.jpeg", value: 7, category: "snack" }, { name: "乖乖", img: "assets/guai-guai.png", value: 5, category: "snack" }, { name: "森永牛奶糖", img: "assets/morinaga-caramel.png", value: 5, category: "snack" }, { name: "黑松沙士", img: "assets/sarsaparilla.png", value: 7, category: "snack" } ];
@@ -28,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const levelConfig = [ { level: 1, items: 3, memoryTime: 6000, mode: "FIND_DIFF" }, { level: 2, items: 3, memoryTime: 5000, mode: "FIND_DIFF" }, { level: 3, items: 3, memoryTime: 5000, mode: "ESTIMATE_PRICE" }, { level: 4, items: 4, memoryTime: 5000, mode: "FIND_DIFF" }, { level: 5, items: 4, memoryTime: 4000, mode: "ESTIMATE_PRICE" }, { level: 6, items: 4, memoryTime: 4000, mode: "FIND_DIFF" }, { level: 7, items: 5, memoryTime: 4000, mode: "FIND_DIFF" }, { level: 8, items: 5, memoryTime: 3500, mode: "ESTIMATE_PRICE" }, { level: 9, items: 5, memoryTime: 3500, mode: "FIND_DIFF" }, ];
     function getRandomItems(n, category) { let sourceItems = nostalgicItems; if (category) { sourceItems = nostalgicItems.filter(item => item.category === category); } const arr = sourceItems.slice(); const items = []; while (items.length < n && arr.length > 0) { const idx = Math.floor(Math.random() * arr.length); items.push(arr.splice(idx, 1)[0]); } return items; }
     function getShuffledItems(items) { const arr = items.slice(); const idx = Math.floor(Math.random() * arr.length); let newItem; do { newItem = nostalgicItems[Math.floor(Math.random() * nostalgicItems.length)]; } while (arr.find((x) => x.name === newItem.name)); arr[idx] = newItem; return { changedItems: arr, changedIdx: idx }; }
-    function getModePrompt(mode, items) { if (mode === "FIND_DIFF") { const { changedItems, changedIdx } = getShuffledItems(items); const prompt = "咦？是不是有東西掉了？"; return { prompt, answer: changedIdx, changedItems }; } else if (mode === "ESTIMATE_PRICE") { const idx = Math.floor(Math.random() * items.length); const item = items[idx]; const correct = item.value; let choices = [ item.value, item.value + 500, Math.max(item.value - 500, 1), item.value + 1000 ].sort(() => Math.random() - 0.5); const answer = choices.indexOf(correct); const prompt = `猜猜看，${item.name}老闆，這個多少錢？`; return { prompt, answer, choices: choices.map((v) => `${v} 元`), item, itemIndex: idx }; } }
+    function getModePrompt(mode, items) { if (mode === "FIND_DIFF") { const { changedItems, changedIdx } = getShuffledItems(items); const prompt = "咦？是不是有東西掉了？"; return { prompt, answer: changedIdx, changedItems }; } else if (mode === "ESTIMATE_PRICE") { const idx = Math.floor(Math.random() * items.length); const item = items[idx]; const correct = item.value; let choices = [ item.value, item.value + 500, Math.max(item.value - 500, 1), item.value + 1000 ].sort(() => Math.random() - 0.5); const answer = choices.indexOf(correct); const prompt = `老闆，${item.name}這個多少錢？`; return { prompt, answer, choices: choices.map((v) => `${v} 元`), item, itemIndex: idx }; } }
     const sfxElements = { coin: () => document.getElementById("sfx-coin"), wrong: () => document.getElementById("sfx-wrong"), vhs: () => document.getElementById("sfx-vhs"), };
     function playSfx(name) { const el = sfxElements[name](); if (el) { el.currentTime = 0; el.play().catch(()=>{}); } }
     function generatePoster(puzzle) { const canvas = document.createElement('canvas'); canvas.width = 600; canvas.height = 800; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#1A202C'; ctx.fillRect(0, 0, 600, 800); const img = new Image(); img.crossOrigin = 'Anonymous'; img.src = puzzle.image; img.onload = () => { ctx.drawImage(img, 50, 150, 500, 500); ctx.fillStyle = '#F7FAFC'; ctx.font = 'bold 48px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('記憶解鎖！', 300, 80); ctx.font = '24px sans-serif'; ctx.fillText(`我成功拼湊了「${puzzle.name}」`, 300, 700); const link = document.createElement('a'); link.download = `我的懷舊記憶-${puzzle.id}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }; img.onerror = () => { alert('海報圖片載入失敗'); }; }
@@ -65,7 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 遊戲資料與狀態 ---
     const MAP_HEIGHT = 2800;
     let playerPath = [];
-    const mapData = {
+    let currentMapData = null; // 用來儲存當前正在玩的章節地圖
+
+    // 【★★★ 核心修改 #1：將地圖資料分開 ★★★】
+    const mapDataCh1 = {
         'start': { type: 'choice', pos: { x: 50, y: 92 }, text: '放學了...', choices: [ { text: '走，先去柑仔店', target: 'gamadim' } ] },
         'gamadim': { type: 'choice', pos: { x: 60, y: 50 }, text: '在柑仔店門口', choices: [ { text: '進去看看有什麼好吃的', target: 'gamadim_puzzle' } ] },
         'gamadim_puzzle': { type: "minigame-memory-puzzle", pos: { x: 28, y: 78 }, next: 'choice_activities', categoryFilter: "snack" },
@@ -73,14 +73,35 @@ document.addEventListener('DOMContentLoaded', () => {
         'bookstore': { type: 'minigame-manga-match', pos: { x: 25, y: 45 }, text: '哇！幽遊白書有新的了', gameUrl: 'manga-match.html', next: 'random_end_router'},
         'arcade': { type: 'minigame-arcade', pos: { x: 75, y: 45 }, text: '走，打電動去', gameUrl: 'neon-strike.html', next: 'random_end_router'},
         'yataixi': { type: 'event', pos: { x: 50, y: 30 }, text: '史艷文真厲害...', next: 'random_end_router'},
-        'random_end_router': {
-            type: 'conditional_random',
-            pos: { x: 50, y: 20 },
-            possible_ends: [ 'end_home_normal', 'end_home_late', 'end_home_alone' ]
-        },
-        'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 50, y: 10 }, title: '我回來了！', description: '回到家，家人早已準備好熱騰騰的飯菜，平凡的日常最是溫暖。', img: 'assets/end_home_normal.jpeg' },
-        'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 75, y: 15 }, title: '媽媽：「又跑到哪裡瘋啦！」', description: '「這麼晚才回來！」雖然被媽媽念了一頓，但聞到熟悉的飯菜香，心還是暖的。', img: 'assets/end_home_late.jpeg' },
-        'end_home_alone': { type: 'end', id: 'end_home_alone', pos: { x: 25, y: 15 }, title: '爸媽還是沒回來...', description: '回到家，才想起爸媽今晚有事不回來。打開燈，空無一人的客廳更顯寂靜...', img: 'assets/end_home_alone.png' }
+        'random_end_router': { type: 'conditional_random', pos: { x: 50, y: 20 }, possible_ends: [ 'end_home_normal', 'end_home_late', 'end_home_alone' ] },
+        'end_home_normal': { type: 'end', id: 'end_home_normal', pos: { x: 50, y: 10 }, title: '我回來了！', description: '回到家，家人早已準備好熱騰騰的飯菜...', img: 'assets/end_home_normal.jpeg', nextChapter: true },
+        'end_home_late': { type: 'end', id: 'end_home_late', pos: { x: 75, y: 15 }, title: '媽媽：「又跑到哪裡瘋啦！」', description: '「這麼晚才回來！」雖然被媽媽念了一頓...', img: 'assets/end_home_late.jpeg', nextChapter: true },
+        'end_home_alone': { type: 'end', id: 'end_home_alone', pos: { x: 25, y: 15 }, title: '爸媽還是沒回來...', description: '回到家，才想起爸媽今晚有事不回來...', img: 'assets/end_home_alone.png', nextChapter: true }
+    };
+
+    const mapDataCh2 = {
+        'ch2_start': { type: 'choice', pos: { x: 50, y: 92 }, text: '第二天，是週末...', choices: [{ text: '先寫作業吧', target: 'ch2_homework' }] },
+        'ch2_homework': { type: 'minigame-math', pos: { x: 50, y: 75 }, text: '寫數學作業', gameUrl: 'mental-math-hacker.html', next: 'ch2_choice1' },
+        'ch2_choice1': { type: 'choice', pos: { x: 50, y: 60 }, text: '寫完作業了，要做什麼呢？', choices: [ { text: '幫忙整理房間', target: 'ch2_tidy_room' }, { text: '幫忙家庭代工', target: 'ch2_assembly' }] },
+        'ch2_tidy_room': { type: 'minigame-room-tidy', pos: { x: 25, y: 45 }, text: '整理房間', gameUrl: 'room-tidy.html', next: 'ch2_end' },
+        'ch2_assembly': { type: 'minigame-assembly', pos: { x: 75, y: 45 }, text: '家庭代工', gameUrl: 'assembly-game.html', next: 'ch2_end' },
+        'ch2_choice_home': { 
+    type: 'choice', 
+    pos: { x: 50, y: 40 }, 
+    text: '回到家，要做些什麼呢？', 
+    choices: [
+        { text: '寫作業', target: 'ch2_homework' },
+        { text: '幫忙打掃', target: 'ch2_dust_buster' }
+    ] 
+},
+'ch2_dust_buster': { 
+    type: 'minigame-dust-buster', 
+    pos: { x: 30, y: 25 }, // 請自行調整座標
+    text: '除塵大作戰',
+    gameUrl: 'dust-buster.html',
+    next: 'ch2_end' // 請設定下一個節點
+},
+        'ch2_end': { type: 'end', id: 'ch2_end', pos: { x: 50, y: 10 }, title: '週末結束了', description: '充實的一天過去了...', img: 'assets/ch2_end.png' } // nextChapter: false (預設)
     };
 
     // --- 核心遊戲函式 ---
@@ -132,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function moveToNode(nodeId) {
         return new Promise(resolve => {
-            const nodeData = mapData[nodeId];
+            const nodeData = currentMapData[nodeId];
             if (!nodeData || !nodeData.pos) { 
                 console.error("Node not found or has no position:", nodeId); 
                 return resolve();
@@ -161,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showChoice(nodeData, currentNodeId) {
         choiceText.textContent = nodeData.text;
+        const choiceButtons = document.getElementById('choice-buttons');
         choiceButtons.innerHTML = ''; 
         choiceOverlay.classList.remove('hidden');
         const activeNodes = []; 
@@ -207,50 +229,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function runGameLogic(nodeId) {
-        const nodeData = mapData[nodeId];
+        const nodeData = currentMapData[nodeId];
         if (!nodeData) { console.error(`執行節點錯誤: 找不到 ID 為 "${nodeId}" 的節點。`); return; }
-        
-        if (nodeData.pos) {
-            await moveToNode(nodeId);
-        }
+        if (nodeData.pos) { await moveToNode(nodeId); }
 
         switch (nodeData.type) {
-            case 'event': 
-                await delay(2000); 
-                playerPath.push(nodeData.next); 
-                runGameLogic(nodeData.next); 
-                break;
-            case 'choice': 
-                showChoice(nodeData, nodeId); 
-                break;
-            case 'conditional_random':
-                const possibleEnds = nodeData.possible_ends;
-                const randomIndex = Math.floor(Math.random() * possibleEnds.length);
-                const nextNodeId = possibleEnds[randomIndex];
-                runGameLogic(nextNodeId);
-                break;
-            case 'minigame-memory-puzzle': 
-                await handleMemoryPuzzle(nodeData); 
-                await delay(50);
-                playerPath.push(nodeData.next);
-                runGameLogic(nodeData.next); 
-                break;
-            case 'minigame-arcade':
-                await handleIframeGame(nodeData, 'arcade-game-complete');
-                await delay(50);
-                playerPath.push(nodeData.next);
-                runGameLogic(nodeData.next);
-                break;
-            case 'minigame-manga-match':
-                await handleIframeGame(nodeData, 'manga-match-complete');
-                await delay(50);
-                playerPath.push(nodeData.next);
-                runGameLogic(nodeData.next);
-                break;
-            case 'end': 
-                await delay(1500); 
-                showEndScreen(nodeData); 
-                break;
+            case 'event': await delay(2000); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
+            case 'choice': showChoice(nodeData, nodeId); break;
+            case 'conditional_random': const possibleEnds = nodeData.possible_ends; const randomIndex = Math.floor(Math.random() * possibleEnds.length); const nextNodeId = possibleEnds[randomIndex]; runGameLogic(nextNodeId); break;
+            case 'minigame-memory-puzzle': await handleMemoryPuzzle(nodeData); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
+            case 'minigame-arcade': await handleIframeGame(nodeData, 'arcade-game-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
+            case 'minigame-manga-match': await handleIframeGame(nodeData, 'manga-match-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
+            case 'minigame-math': await handleIframeGame(nodeData, 'math-game-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
+            case 'minigame-room-tidy': await handleIframeGame(nodeData, 'room-tidy-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
+            case 'minigame-assembly': await handleIframeGame(nodeData, 'assembly-game-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
+            case 'minigame-dust-buster':
+            await handleIframeGame(nodeData, 'dust-buster-complete');
+            await delay(50);
+            playerPath.push(nodeData.next);
+            runGameLogic(nodeData.next);
+            break;
+            case 'end': await delay(1500); showEndScreen(nodeData); break;
         }
     }
     
@@ -260,9 +259,16 @@ document.addEventListener('DOMContentLoaded', () => {
         endImageContainer.innerHTML = `<img src="${endNode.img}" alt="${endNode.title}">`;
         gameArea.classList.add('hidden');
         endScreen.classList.remove('hidden');
+
+        if (endNode.nextChapter) {
+            nextChapterButton.style.display = 'inline-block';
+        } else {
+            nextChapterButton.style.display = 'none';
+        }
     }
 
-    function initGame() {
+    function initGame(map) {
+        currentMapData = map;
         playerPath = [];
         scrollMap.innerHTML = '';
         gameArea.classList.remove('hidden');
@@ -272,23 +278,22 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollMap.style.transform = 'translateY(0px)';
         scrollMap.style.height = `${MAP_HEIGHT}px`;
 
-        Object.keys(mapData).forEach(nodeId => {
-            const nodeData = mapData[nodeId];
+        const startNodeId = Object.keys(currentMapData)[0];
+
+        Object.keys(currentMapData).forEach(nodeId => {
+            const nodeData = currentMapData[nodeId];
             if (nodeData.pos) {
                 const nodeDiv = document.createElement('div');
                 nodeDiv.className = 'node';
                 nodeDiv.dataset.nodeId = nodeId; 
                 nodeDiv.style.left = `${nodeData.pos.x}%`;
                 nodeDiv.style.top = `${nodeData.pos.y}%`;
-                
                 if (nodeData.type !== 'end' && nodeData.type !== 'conditional_random') {
                     const nodeImg = document.createElement('img');
                     nodeImg.src = `assets/${nodeId}.png`; 
-                    nodeImg.alt = nodeData.text || nodeId;
-                    
+                    nodeImg.alt = nodeData.text || '';
                     const nodeText = document.createElement('p');
                     nodeText.textContent = nodeData.text || '';
-
                     nodeDiv.appendChild(nodeImg);
                     nodeDiv.appendChild(nodeText);
                 }
@@ -306,15 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
         homeImg.style.height = '100px';
         homeIconDiv.appendChild(homeImg);
         
-        const startNode = 'start';
-        playerPath.push(startNode);
-        setTimeout(() => runGameLogic(startNode), 100);
+        playerPath.push(startNodeId);
+        setTimeout(() => runGameLogic(startNodeId), 100);
     }
 
     // --- 事件綁定 ---
-    startButton.addEventListener('click', initGame);
-    restartButton.addEventListener('click', () => { window.location.href = window.location.origin + window.location.pathname; });
-    if (shareButton) { shareButton.onclick = async () => { const endNode = mapData[playerPath[playerPath.length - 1]]; const shareData = { title: '我在「指尖的時光路書」走出了這個结局！', text: `我的青春回憶是「${endNode.title}」，也來走走看你的吧！`, url: window.location.origin + window.location.pathname }; try { if (navigator.share) { await navigator.share(shareData); } else { alert('您的瀏覽器不支援直接分享，請手動複製網址分享給朋友！'); } } catch (err) { console.error('分享失敗:', err); } }; }
-    if (createStoryButton) { createStoryButton.onclick = () => { const note = memoryInput.value.trim(); if (!note) { alert('請先寫下你的回憶註解！'); return; } const storyData = { path: playerPath, note: note }; const encodedStory = btoa(JSON.stringify(storyData)); const storyUrl = `${window.location.origin}${window.location.pathname}?story=${encodedStory}`; navigator.clipboard.writeText(storyUrl).then(() => { alert('您的專屬故事連結已複製！快分享給您的孩子或朋友吧！'); }).catch(err => { alert('複製失敗，請手動複製以下連結：\n' + storyUrl); }); }; }
+    startButton.addEventListener('click', () => initGame(mapDataCh1));
+    restartButton.addEventListener('click', () => initGame(mapDataCh1));
+    nextChapterButton.addEventListener('click', () => initGame(mapDataCh2));
 
 });

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>寫作業 - 心算挑戰</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "Helvetica Neue", sans-serif; background-color: #3D2B1F; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #game-container { width: 100%; max-width: 450px; height: 100%; background-color: #fdf5e6; /* 作業簿的米黃色 */ display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.5); position: relative; }
+        
+        #ui-panel { padding: 20px; text-align: center; border-bottom: 2px solid #ddd; }
+        #ui-panel h2, #ui-panel p { margin: 5px 0; color: #3D2B1F; }
+
+        #question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; font-size: 2.5em; color: #2c3e50; }
+        #answer-display { min-height: 50px; font-size: 2.5em; font-weight: bold; color: #2980b9; border-bottom: 2px solid #2980b9; margin-bottom: 20px; }
+        
+        #keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; background-color: #ecf0f1; }
+        .keypad-btn { padding: 20px; font-size: 2em; font-weight: bold; border: none; border-radius: 10px; background-color: #fff; box-shadow: 0 4px #bdc3c7; cursor: pointer; color: #34495e; }
+        .keypad-btn:active { transform: translateY(2px); box-shadow: 0 2px #bdc3c7; }
+        .keypad-btn.submit { background-color: #2ecc71; color: white; box-shadow: 0 4px #27ae60; }
+        .keypad-btn.clear { background-color: #e74c3c; color: white; box-shadow: 0 4px #c0392b; }
+        /* 【★★★ 新增樣式 ★★★】 */
+        .keypad-btn.operator { background-color: #95a5a6; color: white; box-shadow: 0 4px #7f8c8d; }
+
+
+        .popup { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 10; }
+        .popup h1 { font-size: 2.5em; color: #FFD700; }
+        .popup button { padding: 15px 30px; font-size: 1.5em; margin-top: 20px; border: none; background-color: #AF4425; color: white; border-radius: 12px; cursor: pointer; }
+        
+        /* 答錯時的抖動動畫 */
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        .shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
+
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="ui-panel">
+            <h2>數學作業</h2>
+            <p>進度: <span id="progress">0</span> / 5</p>
+        </div>
+        <div id="question-area">
+            <div id="question-text">1 + 1 = ?</div>
+            <div id="answer-display"></div>
+        </div>
+        <div id="keypad">
+            <!-- 數字鍵盤將由 JS 動態生成 -->
+        </div>
+    </div>
+    
+    <div id="start-popup" class="popup">
+        <h1>寫作業！</h1>
+        <p>點擊數字按鈕，完成 5 道數學題吧！</p>
+        <button id="start-btn">開始作答</button>
+    </div>
+
+    <div id="end-popup" class="popup" style="display: none;">
+        <h1>作業寫完了！</h1>
+        <p id="final-text">可以去看電視了！</p>
+        <button id="end-btn">完成作業</button>
+    </div>
+
+    <script>
+    const questionText = document.getElementById('question-text');
+    const answerDisplay = document.getElementById('answer-display');
+    const keypad = document.getElementById('keypad');
+    const progressDisplay = document.getElementById('progress');
+    const startPopup = document.getElementById('start-popup');
+    const endPopup = document.getElementById('end-popup');
+    const startBtn = document.getElementById('start-btn');
+    const endBtn = document.getElementById('end-btn');
+
+    let currentQuestion = null;
+    let currentAnswer = '';
+    let questionsAnswered = 0;
+    const GOAL = 5;
+    let isPlaying = false;
+
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function rand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+    function calc(exprs) {
+        let stack = [];
+        for (let i = 0; i < exprs.length; i++) {
+            const token = exprs[i];
+            if (typeof token === "number") stack.push(token);
+            else { let b = stack.pop(), a = stack.pop(); if (token === "+") stack.push(a + b); else if (token === "-") stack.push(a - b); else if (token === "x") stack.push(a * b); }
+        }
+        return stack[0];
+    }
+    function generateQuestion() {
+        let n1, n2, op1;
+        if (questionsAnswered < 2) { 
+            n1 = rand(1, 9); n2 = rand(1, 9); op1 = pick(["+", "-"]);
+        } else {
+            n1 = rand(2, 15); n2 = rand(2, 9); op1 = pick(["+", "-", "x"]);
+        }
+        // 確保減法不會出現太大的負數，增加可玩性
+        if (op1 === '-' && n1 < n2) { [n1, n2] = [n2, n1]; }
+        
+        const exprsForDisplay = [n1, op1, n2];
+        const exprsForCalc = [n1, n2, op1];
+        return { text: `${n1} ${op1} ${n2} = ?`, ans: calc(exprsForCalc) };
+    }
+
+    function nextQuestion() {
+        if (questionsAnswered >= GOAL) {
+            endGame();
+            return;
+        }
+        currentQuestion = generateQuestion();
+        currentAnswer = '';
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        questionText.textContent = currentQuestion.text;
+        answerDisplay.textContent = currentAnswer || '_';
+        progressDisplay.textContent = questionsAnswered;
+    }
+
+    function checkAnswer() {
+        if (currentAnswer === '' || currentAnswer === '-') return; // 防止空答案或單一負號提交
+        if (parseInt(currentAnswer) === currentQuestion.ans) {
+            questionsAnswered++;
+            answerDisplay.style.color = '#2ecc71';
+            setTimeout(() => {
+                answerDisplay.style.color = '#2980b9';
+                nextQuestion();
+            }, 500);
+        } else {
+            answerDisplay.style.color = '#e74c3c';
+            answerDisplay.classList.add('shake');
+            setTimeout(() => {
+                answerDisplay.style.color = '#2980b9';
+                answerDisplay.classList.remove('shake');
+                currentAnswer = '';
+                updateDisplay();
+            }, 500);
+        }
+    }
+    
+    function createKeypad() {
+        // 【★★★ 核心修改 #1：新增 '-' 號按鈕 ★★★】
+        const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '0', '清除', '送出'];
+        keypad.innerHTML = ''; // 清空
+        keys.forEach(key => {
+            const btn = document.createElement('button');
+            btn.className = 'keypad-btn';
+            btn.textContent = key;
+            if (key === '送出') {
+                btn.classList.add('submit');
+                btn.onclick = checkAnswer;
+            } else if (key === '清除') {
+                btn.classList.add('clear');
+                btn.onclick = () => { currentAnswer = ''; updateDisplay(); };
+            } else if (key === '-') {
+                btn.classList.add('operator');
+                btn.onclick = () => {
+                    // 【★★★ 核心修改 #2：處理 '-' 號的輸入邏輯 ★★★】
+                    if (currentAnswer.length === 0) { // 只允許在開頭輸入負號
+                        currentAnswer = '-';
+                        updateDisplay();
+                    }
+                };
+            } else {
+                btn.onclick = () => {
+                    if (currentAnswer.length < 4) {
+                        currentAnswer += key;
+                        updateDisplay();
+                    }
+                };
+            }
+            keypad.appendChild(btn);
+        });
+    }
+
+    function startGame() {
+        isPlaying = true;
+        questionsAnswered = 0;
+        startPopup.style.display = 'none';
+        nextQuestion();
+    }
+
+    function endGame() {
+        isPlaying = false;
+        endPopup.style.display = 'flex';
+    }
+    
+    startBtn.addEventListener('click', startGame);
+    endBtn.addEventListener('click', () => {
+        window.parent.postMessage('math-game-complete', '*');
+    });
+
+    createKeypad();
+    </script>
+</body>
+</html>

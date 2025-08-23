@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>除塵大作戰</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "Helvetica Neue", sans-serif; background-color: #3D2B1F; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #game-container { width: 100%; max-width: 450px; height: 100%; background-color: #A0522D; /* 模擬木地板顏色 */ display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.5); position: relative; }
+        #game-canvas { flex-grow: 1; cursor: pointer; }
+        #ui-panel { background-color: #6F4E37; color: #FFF8E7; padding: 15px; text-align: center; box-shadow: 0 -5px 10px rgba(0,0,0,0.2); display: flex; justify-content: space-around; font-size: 1.2em; font-weight: bold; }
+        .popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.8); color: white; padding: 30px; border-radius: 20px; text-align: center; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+        .popup h1 { font-size: 2.5em; color: #FFD700; margin: 0 0 15px 0; }
+        .popup button { padding: 15px 30px; font-size: 1.5em; margin-top: 20px; border: none; background-color: #AF4425; color: white; border-radius: 12px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-panel">
+            <div>分數: <span id="score">0</span></div>
+            <div>時間: <span id="timer">30</span></div>
+        </div>
+    </div>
+    
+    <div id="start-popup" class="popup">
+        <h1>除塵大作戰</h1>
+        <p>在時間內盡可能點擊灰塵！</p>
+        <button id="start-btn">開始打掃</button>
+    </div>
+
+    <div id="end-popup" class="popup" style="display: none;">
+        <h1>時間到！</h1>
+        <p>您的分數是: <span id="final-score">0</span></p>
+        <button id="end-btn">完成打掃</button>
+    </div>
+
+    <script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+    
+    // UI Elements
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const startPopup = document.getElementById('start-popup');
+    const endPopup = document.getElementById('end-popup');
+    const startBtn = document.getElementById('start-btn');
+    const endBtn = document.getElementById('end-btn');
+    const finalScoreDisplay = document.getElementById('final-score');
+
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight - document.getElementById('ui-panel').offsetHeight;
+
+    // --- 遊戲設定 ---
+    let score = 0;
+    let timeLeft = 30;
+    let dustBunnies = [];
+    let spawnTimer = null;
+    let gameTimer = null;
+    let isPlaying = false;
+
+    // 繪製一個灰塵團的函式
+    function drawDustBunny(bunny) {
+        ctx.beginPath();
+        ctx.arc(bunny.x, bunny.y, bunny.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(128, 128, 128, ${bunny.opacity})`;
+        ctx.fill();
+    }
+
+    // 產生一個新的灰塵團
+    function spawnDustBunny() {
+        if (!isPlaying) return;
+
+        const radius = 15 + Math.random() * 20; // 隨機大小
+        const x = radius + Math.random() * (canvas.width - radius * 2);
+        const y = radius + Math.random() * (canvas.height - radius * 2);
+        const lifespan = 1000 + Math.random() * 1500; // 存活時間
+
+        const newBunny = { x, y, radius, createdAt: Date.now(), lifespan, opacity: 1 };
+        dustBunnies.push(newBunny);
+
+        // 隨機間隔產生下一個
+        const nextSpawnTime = 200 + Math.random() * 800;
+        spawnTimer = setTimeout(spawnDustBunny, nextSpawnTime);
+    }
+
+    // 遊戲主迴圈
+    function gameLoop() {
+        if (!isPlaying) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const now = Date.now();
+
+        // 更新與繪製所有灰塵
+        for (let i = dustBunnies.length - 1; i >= 0; i--) {
+            const bunny = dustBunnies[i];
+            const age = now - bunny.createdAt;
+
+            if (age > bunny.lifespan) {
+                // 生命結束，移除
+                dustBunnies.splice(i, 1);
+            } else {
+                // 隨著時間淡出
+                bunny.opacity = 1 - (age / bunny.lifespan);
+                drawDustBunny(bunny);
+            }
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    // 點擊事件處理
+    canvas.addEventListener('click', (event) => {
+        if (!isPlaying) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
+
+        for (let i = dustBunnies.length - 1; i >= 0; i--) {
+            const bunny = dustBunnies[i];
+            const distance = Math.sqrt(Math.pow(clickX - bunny.x, 2) + Math.pow(clickY - bunny.y, 2));
+
+            if (distance < bunny.radius) {
+                // 點中了！
+                score += 10;
+                scoreDisplay.textContent = score;
+                dustBunnies.splice(i, 1); // 移除被點中的灰塵
+                break; // 每次點擊最多消除一個
+            }
+        }
+    });
+    
+    function startGame() {
+        isPlaying = true;
+        score = 0;
+        timeLeft = 30;
+        dustBunnies = [];
+        scoreDisplay.textContent = score;
+        timerDisplay.textContent = timeLeft;
+        startPopup.style.display = 'none';
+        endPopup.style.display = 'none';
+
+        // 啟動倒數計時器
+        gameTimer = setInterval(() => {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }, 1000);
+
+        // 開始產生灰塵並啟動遊戲迴圈
+        spawnDustBunny();
+        gameLoop();
+    }
+
+    function endGame() {
+        isPlaying = false;
+        clearTimeout(spawnTimer);
+        clearInterval(gameTimer);
+        finalScoreDisplay.textContent = score;
+        endPopup.style.display = 'flex';
+    }
+
+    startBtn.addEventListener('click', startGame);
+    endBtn.addEventListener('click', () => {
+        // 通知主遊戲，小遊戲已完成
+        window.parent.postMessage('dust-buster-complete', '*');
+    });
+
+    </script>
+</body>
+</html>

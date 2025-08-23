@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>家庭代工 - 節奏組裝</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "Helvetica Neue", sans-serif; background-color: #3D2B1F; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #game-container { width: 100%; max-width: 450px; height: 100%; background-color: #f0e6d2; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.5); position: relative; }
+        #game-canvas { background-color: #D2B48C; flex-grow: 1; }
+        #ui-panel { background-color: #6F4E37; color: #FFF8E7; padding: 10px; text-align: center; box-shadow: 0 -5px 10px rgba(0,0,0,0.2); }
+        #glue-button { width: 80%; padding: 20px; font-size: 2em; font-weight: bold; background-color: #e67e22; color: white; border: 4px solid #FFF8E7; border-radius: 20px; cursor: pointer; }
+        #feedback-text { position: absolute; top: 40%; left: 50%; transform: translateX(-50%); font-size: 4em; font-weight: bold; color: white; text-shadow: 0 0 15px black; pointer-events: none; opacity: 0; transition: all 0.5s; }
+        #feedback-text.show { transform: translateX(-50%) scale(1.2); opacity: 1; }
+        .popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.8); color: white; padding: 30px; border-radius: 20px; text-align: center; z-index: 10; }
+        .popup h1 { font-size: 2.5em; color: #FFD700; }
+        .popup button { padding: 10px 20px; font-size: 1.2em; margin-top: 15px; }
+
+        /* 【★★★ 新增 #1：教學彈窗樣式 ★★★】 */
+        .tutorial-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 32, 44, 0.85); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .tutorial-modal { background: #E2E8F0; color: #1A202C; padding: 20px 30px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); border: 2px solid #F7FAFC; position: relative; font-family: 'Noto Sans TC', sans-serif; }
+        .tutorial-close-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 16px; color: #555; cursor: pointer; font-family: inherit; }
+        .tutorial-modal h4 { font-size: 2em; margin-top: 10px; margin-bottom: 20px; text-align: center; }
+        .tutorial-modal li { font-size: 1.1em; margin-bottom: 10px; line-height: 1.5; }
+
+    </style>
+</head>
+<body>
+    <div id="tutorial-overlay" class="tutorial-overlay" style="display: none;">
+        <div class="tutorial-modal">
+            <button id="tutorial-close-btn" class="tutorial-close-btn">我知道了</button>
+            <h4>玩法說明</h4>
+            <ul>
+                <li>觀察輸送帶上滑出的零件（花瓣、花蕊）。</li>
+                <li>當零件到達左側的金色「黏合區」時，按下「黏合」按鈕！</li>
+                <li>抓準時機，挑戰「完美 (Perfect)」評價吧！</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-panel">
+            <h2>分數: <span id="score">0</span> | 進度: <span id="progress">0</span> / <span id="total-notes">0</span></h2>
+            <button id="glue-button">黏合</button>
+        </div>
+        <div id="feedback-text"></div>
+    </div>
+    <div id="end-popup" class="popup" style="display: none;">
+        <h1 id="popup-title">交貨了！</h1>
+        <p id="popup-text">您賺到了 0 元！</p>
+        <button id="end-btn">完成代工</button>
+    </div>
+
+    <script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight - document.getElementById('ui-panel').offsetHeight;
+
+    const scoreDisplay = document.getElementById('score');
+    const progressDisplay = document.getElementById('progress');
+    const totalNotesDisplay = document.getElementById('total-notes');
+    const glueButton = document.getElementById('glue-button');
+    const feedbackText = document.getElementById('feedback-text');
+    const endPopup = document.getElementById('end-popup');
+    const popupTitle = document.getElementById('popup-title');
+    const popupText = document.getElementById('popup-text');
+    const endBtn = document.getElementById('end-btn');
+    const tutorialOverlay = document.getElementById('tutorial-overlay');
+    const tutorialCloseBtn = document.getElementById('tutorial-close-btn');
+
+    let score = 0;
+    let notesCompleted = 0;
+    
+    // 【★★★ 核心修改 #1：將固定速度改為可變速度 ★★★】
+    let noteSpeed = 150; // 初始速度
+    const JUDGEMENT_LINE_X = 80;
+    const PERFECT_WINDOW = 50;
+    const GOOD_WINDOW = 100;
+
+    let startTime = 0;
+    let notes = [];
+    let isPlaying = false;
+
+    const beatmap = [
+        { time: 1500, type: 'petal' }, { time: 2500, type: 'stamen' },
+        { time: 3500, type: 'petal' }, { time: 4000, type: 'stamen' },
+        { time: 5000, type: 'petal' }, { time: 5500, type: 'petal' }, { time: 6000, type: 'stamen' },
+        { time: 7000, type: 'petal' }, { time: 7500, type: 'stamen' }, { time: 8000, type: 'stamen' },
+        { time: 9000, type: 'petal' }, { time: 9500, type: 'petal' }, { time: 10000, type: 'stamen' }, { time: 10500, type: 'petal' }
+    ];
+
+    function startGame() {
+        score = 0;
+        notesCompleted = 0;
+        noteSpeed = 150; // 重設初始速度
+        isPlaying = true;
+        notes = JSON.parse(JSON.stringify(beatmap));
+        totalNotesDisplay.textContent = notes.length;
+        updateUI();
+        startTime = performance.now();
+        gameLoop();
+    }
+
+    function drawNote(note) {
+        ctx.beginPath();
+        if (note.type === 'petal') {
+            ctx.fillStyle = '#f1c40f';
+            ctx.arc(note.x, canvas.height / 2, 20, 0, Math.PI * 2);
+        } else if (note.type === 'stamen') {
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(note.x - 15, canvas.height / 2 - 15, 30, 30);
+        }
+        ctx.fill();
+    }
+
+    function showFeedback(text, color) {
+        feedbackText.textContent = text;
+        feedbackText.style.color = color;
+        feedbackText.classList.add('show');
+        setTimeout(() => { feedbackText.classList.remove('show'); }, 500);
+    }
+    
+    function updateUI() {
+        scoreDisplay.textContent = score;
+        progressDisplay.textContent = notesCompleted;
+    }
+
+    function gameLoop() {
+        if (!isPlaying) return;
+        const currentTime = performance.now() - startTime;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#5D6D7E';
+        ctx.fillRect(0, canvas.height / 2 - 25, canvas.width, 50);
+
+        ctx.strokeStyle = '#F9DF5B';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(JUDGEMENT_LINE_X, canvas.height / 2 - 40);
+        ctx.lineTo(JUDGEMENT_LINE_X, canvas.height / 2 + 40);
+        ctx.stroke();
+
+        for (let i = notes.length - 1; i >= 0; i--) {
+            const note = notes[i];
+            const targetTime = note.time;
+            
+            // 【★★★ 核心修改 #2：使用可變速度計算位置 ★★★】
+            const timeUntilJudgement = targetTime - currentTime;
+            note.x = JUDGEMENT_LINE_X + timeUntilJudgement * (noteSpeed / 1000);
+
+            if (note.x < -50) {
+                notes.splice(i, 1);
+                notesCompleted++;
+                showFeedback('失誤', '#bdc3c7');
+                updateUI();
+            } else {
+                drawNote(note);
+            }
+        }
+        
+        if (notesCompleted >= beatmap.length && isPlaying) {
+            endGame(true);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    function handleInput() {
+        if (!isPlaying || notes.length === 0) return;
+        const currentTime = performance.now() - startTime;
+        
+        let noteJudged = false;
+        for (let i = 0; i < notes.length; i++) {
+            const note = notes[i];
+            const timeDiff = Math.abs(currentTime - note.time);
+
+            if (timeDiff <= GOOD_WINDOW) { // 只要在 Good 區間內都算可判定
+                if (timeDiff <= PERFECT_WINDOW) {
+                    score += 100;
+                    showFeedback('完美!', '#2ecc71');
+                } else {
+                    score += 50;
+                    showFeedback('不錯', '#3498db');
+                }
+                notes.splice(i, 1);
+                notesCompleted++;
+                noteJudged = true;
+                break; // 每次點擊只判定一個note
+            }
+        }
+
+        if(noteJudged) {
+            // 【★★★ 核心修改 #3：根據分數增加速度 ★★★】
+            noteSpeed = 150 + (score / 10); // 分數越高，速度越快
+        }
+
+        updateUI();
+        if (notesCompleted >= beatmap.length && isPlaying) {
+            endGame(true);
+        }
+    }
+
+    glueButton.addEventListener('click', handleInput);
+
+    function endGame(finishedAll) {
+        if (!isPlaying) return;
+        isPlaying = false;
+        const earnings = Math.floor(score / 10);
+        popupTitle.textContent = finishedAll ? "交貨了！" : "時間到了！";
+        popupText.textContent = `辛苦了！這次代工賺到了 ${earnings} 元！`;
+        endPopup.style.display = 'flex';
+    }
+
+    endBtn.addEventListener('click', () => {
+        window.parent.postMessage('assembly-game-complete', '*');
+    });
+
+    // 【★★★ 新增 #3：教學啟動邏輯 ★★★】
+    function init() {
+        const tutorialKey = 'tutorialShown_assembly-game';
+        if (!sessionStorage.getItem(tutorialKey)) {
+            tutorialOverlay.style.display = 'flex';
+        } else {
+            startGame();
+        }
+
+        tutorialCloseBtn.onclick = () => {
+            tutorialOverlay.style.display = 'none';
+            sessionStorage.setItem(tutorialKey, 'true');
+            startGame();
+        };
+    }
+    
+    init(); // 啟動遊戲
+    </script>
+</body>
+</html>
