@@ -36,72 +36,35 @@
   <script>
     const e = React.createElement;
 
-    // 【★★★ 核心修改 #1：將 sceneData 改為多關卡陣列 ★★★】
-    const sceneData = [
-      { // 關卡 1
-        id: 'messy_room_1',
-        name: '凌亂的書桌',
-        background: 'assets/scene-messy-room-1.jpg', // 第一關的背景圖
-        objects: [
-          { id: 'poster', name: '海報', coords: { x: 13, y: 12, size: 15 } },
-        { id: 'lamp', name: '檯燈', coords: { x: 58, y: 30, size: 18 } },
+    // 【★★★ 核心修改 #1：精準座標 & 可調整的遊戲參數 ★★★】
+    const OBJECTS_PER_LEVEL = 3; // <-- 在這裡設定每關要找幾個物品！
+
+    const allObjects = [
+        { id: 'poster', name: '海報', coords: { x: 13, y: 12, size: 15 } },
+        { id: 'lamp', name: '檯燈', coords: { x: 58, y: 29, size: 18 } },
         { id: 'clock', name: '鬧鐘', coords: { x: 70, y: 41, size: 10 } },
-        { id: 'tv', name: '電視', coords: { x: 88, y: 42, size: 18 } },
-        { id: 'pencilsharpener', name: '削鉛筆機', coords: { x: 50, y: 48, size: 10 } },
+        { id: 'tv', name: '電視', coords: { x: 88, y: 43, size: 18 } },
+        { id: 'pencilsharpener', name: '削鉛筆機', coords: { x: 49, y: 48, size: 10 } },
         { id: 'apple', name: '蘋果', coords: { x: 78, y: 55, size: 8 } },
-        { id: 'console', name: '紅白機', coords: { x: 68, y: 72, size: 25 } },
-        { id: 'joypad', name: '遊戲手把', coords: { x: 82, y: 80, size: 12 } },
+        { id: 'console', name: '紅白機', coords: { x: 68, y: 75, size: 25 } },
+        { id: 'joypad', name: '遊戲手把', coords: { x: 82, y: 81, size: 12 } },
         { id: 'schoolbag', name: '書包', coords: { x: 88, y: 82, size: 20 } },
         { id: 'walkman', name: '隨身聽', coords: { x: 28, y: 80, size: 18 } },
         { id: 'cassette', name: '錄音帶', coords: { x: 50, y: 88, size: 15 } },
         { id: 'comic', name: '漫畫書', coords: { x: 45, y: 92, size: 28 } },
         { id: 'rubikscube', name: '魔術方塊', coords: { x: 92, y: 95, size: 10 } },
-        { id: 'radio', name: '收音機', coords: { x: 15, y: 65, size: 22 } }
-        ]
-      },
-      { // 關卡 2
-        id: 'messy_room_2',
-        name: '地板',
-        background: 'assets/scene-messy-room-2.jpg', // 第二關的背景圖
-        objects: [
-          { id: 'poster', name: '海報', coords: { x: 13, y: 12, size: 15 } },
-        { id: 'lamp', name: '檯燈', coords: { x: 58, y: 30, size: 18 } },
-        { id: 'clock', name: '鬧鐘', coords: { x: 70, y: 41, size: 10 } },
-        { id: 'tv', name: '電視', coords: { x: 88, y: 42, size: 18 } },
-        { id: 'pencilsharpener', name: '削鉛筆機', coords: { x: 50, y: 48, size: 10 } },
-        { id: 'apple', name: '蘋果', coords: { x: 78, y: 55, size: 8 } },
-        { id: 'console', name: '紅白機', coords: { x: 68, y: 72, size: 25 } },
-        { id: 'joypad', name: '遊戲手把', coords: { x: 82, y: 80, size: 12 } },
-        { id: 'schoolbag', name: '書包', coords: { x: 88, y: 82, size: 20 } },
-        { id: 'walkman', name: '隨身聽', coords: { x: 28, y: 80, size: 18 } },
-        { id: 'cassette', name: '錄音帶', coords: { x: 50, y: 88, size: 15 } },
-        { id: 'comic', name: '漫畫書', coords: { x: 45, y: 92, size: 28 } },
-        { id: 'rubikscube', name: '魔術方塊', coords: { x: 92, y: 95, size: 10 } },
-        { id: 'radio', name: '收音機', coords: { x: 15, y: 65, size: 22 } }
-        ]
-      },
-      { // 關卡 3
-        id: 'messy_room_3',
-        name: '書櫃',
-        background: 'assets/scene-messy-room-3.jpg', // 第三關的背景圖
-        objects: [
-          { id: 'poster', name: '海報', coords: { x: 13, y: 12, size: 15 } },
-        { id: 'lamp', name: '檯燈', coords: { x: 58, y: 30, size: 18 } },
-        { id: 'clock', name: '鬧鐘', coords: { x: 70, y: 41, size: 10 } },
-        { id: 'tv', name: '電視', coords: { x: 88, y: 42, size: 18 } },
-        { id: 'pencilsharpener', name: '削鉛筆機', coords: { x: 50, y: 48, size: 10 } },
-        { id: 'apple', name: '蘋果', coords: { x: 78, y: 55, size: 8 } },
-        { id: 'console', name: '紅白機', coords: { x: 68, y: 72, size: 25 } },
-        { id: 'joypad', name: '遊戲手把', coords: { x: 82, y: 80, size: 12 } },
-        { id: 'schoolbag', name: '書包', coords: { x: 88, y: 82, size: 20 } },
-        { id: 'walkman', name: '隨身聽', coords: { x: 28, y: 80, size: 18 } },
-        { id: 'cassette', name: '錄音帶', coords: { x: 50, y: 88, size: 15 } },
-        { id: 'comic', name: '漫畫書', coords: { x: 45, y: 92, size: 28 } },
-        { id: 'rubikscube', name: '魔術方塊', coords: { x: 92, y: 95, size: 10 } },
-        { id: 'radio', name: '收音機', coords: { x: 15, y: 65, size: 22 } }
-        ]
-      }
+        { id: 'radio', name: '收音機', coords: { x: 15, y: 65, size: 22 } },
+        { id: 'chairbag', name: '綠色肩背包', coords: { x: 38, y: 55, size: 20 } }
     ];
+
+    const sceneData = {
+        id: 'messy_room_1',
+        name: '凌亂的房間',
+        background: 'assets/scene-messy-room.jpg',
+        objectsPool: allObjects // 每一關都使用同一個題庫
+    };
+
+    const TOTAL_LEVELS = 3; // 總共要玩 3 關
 
     const sfxElements = { found: () => document.getElementById("sfx-found"), hint: () => document.getElementById("sfx-hint") };
     function playSfx(name) { const el = sfxElements[name](); if (el) { el.currentTime = 0; el.play().catch(()=>{}); } }
@@ -110,28 +73,32 @@
         window.parent.postMessage('room-tidy-complete', '*');
     }
 
+    function selectRandomObjects(pool, count) {
+        const shuffled = [...pool].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+    }
+
     function App() {
       const [gameStatus, setGameStatus] = React.useState("TITLE");
       const [foundObjects, setFoundObjects] = React.useState([]);
       const [markers, setMarkers] = React.useState([]);
-      // 【★★★ 核心修改 #2：新增關卡狀態管理 ★★★】
-      const [currentLevel, setCurrentLevel] = React.useState(0);
+      const [currentLevel, setCurrentLevel] = React.useState(1);
+      const [currentTargets, setCurrentTargets] = React.useState([]);
       
-      const currentScene = sceneData[currentLevel];
-
       const startLevel = (levelIndex) => {
         setCurrentLevel(levelIndex);
         setFoundObjects([]);
         setMarkers([]);
+        setCurrentTargets(selectRandomObjects(sceneData.objectsPool, OBJECTS_PER_LEVEL));
         setGameStatus('PLAYING');
       };
 
       const goToNextLevel = () => {
         const nextLevel = currentLevel + 1;
-        if (nextLevel < sceneData.length) {
+        if (nextLevel <= TOTAL_LEVELS) {
           startLevel(nextLevel);
         } else {
-          setGameStatus('ALL_COMPLETE'); // 所有關卡完成
+          setGameStatus('ALL_COMPLETE');
         }
       };
 
@@ -141,7 +108,7 @@
         const clickX = ((event.clientX - rect.left) / rect.width) * 100;
         const clickY = ((event.clientY - rect.top) / rect.height) * 100;
         
-        currentScene.objects.forEach(obj => {
+        currentTargets.forEach(obj => {
           if (foundObjects.includes(obj.id)) return;
           const dist = Math.sqrt(Math.pow(clickX - obj.coords.x, 2) + Math.pow(clickY - obj.coords.y, 2));
           if (dist < obj.coords.size / 2) {
@@ -149,7 +116,7 @@
             const newFound = [...foundObjects, obj.id];
             setFoundObjects(newFound);
             setMarkers([...markers, { ...obj.coords, type: 'found' }]);
-            if (newFound.length === currentScene.objects.length) {
+            if (newFound.length === currentTargets.length) {
               setTimeout(() => setGameStatus('LEVEL_COMPLETE'), 1000);
             }
           }
@@ -163,30 +130,25 @@
           case 'PLAYING':
             return e('div', { className: 'game-container' },
               e('div', { className: 'scene-container', onClick: handleSceneClick },
-                e('img', { src: currentScene.background, className: 'scene-background' }),
+                e('img', { src: sceneData.background, className: 'scene-background' }),
                 ...markers.map((m, i) => e('div', { key: i, className: `${m.type}-marker`, style: { left: `${m.x}%`, top: `${m.y}%`, width: `${m.size}%`, height: `${m.size}%` } }))
               ),
               e('div', { className: 'hud' },
-                e('div', { className: 'hud-title' }, `去把你的豬窩${currentScene.name}收拾了！`),
+                e('div', { className: 'hud-title' }, `第 ${currentLevel} / ${TOTAL_LEVELS} 區塊：把東西歸位！`),
                 e('div', { className: 'object-list' },
-                  ...currentScene.objects.map(obj => e('span', { key: obj.id, className: `object-item ${foundObjects.includes(obj.id) ? 'found' : ''}` }, obj.name))
+                  ...currentTargets.map(obj => e('span', { key: obj.id, className: `object-item ${foundObjects.includes(obj.id) ? 'found' : ''}` }, obj.name))
                 )
               )
             );
-
-          // 【★★★ 核心修改 #3：新增單一關卡完成畫面 ★★★】
           case 'LEVEL_COMPLETE':
             return e('div', { className: 'level-complete-screen' },
-              e('h2', { className: 'pixel-font', style: { color: "#F9DF5B" } }, `「${currentScene.name}」整理好了！`),
+              e('h2', { className: 'pixel-font', style: { color: "#F9DF5B" } }, `區域 ${currentLevel} 整理好了！`),
               e('p', {style:{color:"#fff"}}, `還有其他地方要整理...`),
               e('button', { className: "start-btn", onClick: goToNextLevel }, "繼續整理")
             );
-
-          // 【★★★ 核心修改 #4：修改最終通關畫面，加入獎勵圖 ★★★】
           case 'ALL_COMPLETE':
             return e('div', { className: 'game-over-screen' },
               e('h2', { className: 'pixel-font', style: { color: "#F9DF5B" } }, "全部整理乾淨了！"),
-              // 獎勵圖，請將圖片路徑換成您自己的
               e('img', { src: 'assets/scene-tidy-room.jpg', className: 'completion-image' }),
               e('p', {style:{color:"#fff"}}, `媽媽說你真棒！`),
               e('button', { className: "start-btn", onClick: endGame }, "完成整理")
@@ -195,7 +157,7 @@
             return e("div", { className: "title-screen" }, 
               e("h1", { className: "pixel-font", style: { color: "#F9DF5B" } }, "整理房間"), 
               e("p", { style: { color: "#E383B9" } }, "媽媽說房間太亂了，去整理一下吧！"), 
-              e("button", { className: "start-btn", onClick: () => startLevel(0) }, "開始整理")
+              e("button", { className: "start-btn", onClick: () => startLevel(1) }, "開始整理")
             );
         }
       };
