@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>記憶拼圖</title>
+    <link rel="stylesheet" href="jigsaw-style.css"> </head>
+<body>
+    <div id="game-wrapper">
+        <h1 id="puzzle-title">現在看什麼？...</h1>
+        <div id="puzzle-container">
+            </div>
+        <p id="moves-counter">步數: 0</p>
+        <div id="completion-message" class="hidden">
+            <h2>恭喜！你成功了！</h2>
+            <button id="complete-button">還要看什麼呢？</button>
+        </div>
+    </div>
+    
+    <script src="game-data.js"></script> 
+    <script src="jigsaw-game.js"></script> </body>
+</html>

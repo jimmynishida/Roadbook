@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>注音符號節奏遊戲</title>
+    <style>
+        :root { --theme-color-1: #ff8c00; --font-family: 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: var(--font-family); overflow: hidden; touch-action: manipulation; background: linear-gradient(135deg, #2a2a3e, #4a3a4a); color: white; user-select: none; -webkit-user-select: none; }
+        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); text-align: center; transition: opacity 0.5s ease; box-sizing: border-box; padding: 20px; z-index: 200; }
+        .screen.active { display: flex; }
+        h1, h2, h3 { text-shadow: 2px 2px 8px rgba(0,0,0,0.8); }
+        h1 { font-size: clamp(2.5rem, 10vw, 3.5rem); }
+        h2 { font-size: clamp(1.8rem, 8vw, 2.5rem); margin-bottom: 20px;}
+        .retro-button { padding: 14px 28px; font-size: clamp(1rem, 4.5vw, 1.2rem); color: white; background: linear-gradient(145deg, var(--theme-color-1), #e06a00); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 12px; cursor: pointer; margin: 10px; min-width: 150px; box-shadow: 0 4px 0 #a04a00; }
+        .retro-button:active { transform: translateY(2px); box-shadow: 0 2px 0 #a04a00; }
+        .top-stats-bar { position: fixed; top: 20px; left: 0; right: 0; display: flex; justify-content: space-between; z-index: 100; pointer-events: none; padding: 0 20px; box-sizing: border-box; }
+        .stats-display { background-color: rgba(0, 0, 0, 0.5); padding: 8px 15px; border-radius: 20px; font-size: clamp(1rem, 5vw, 1.3rem); font-weight: bold; border: 1px solid; pointer-events: auto; }
+        .star-display { color: gold; border-color: gold; }
+        .wallet-display { color: #FFD700; border-color: #FFD700; }
+        #main-menu-screen { background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://source.unsplash.com/random/800x600/?80s,retro,road') no-repeat center center/cover; }
+        .main-menu-buttons { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 40px; }
+        .main-menu-buttons .retro-button { width: 280px; height: 70px; font-size: 1.8rem; }
+        .retro-button.small { width: auto; height: auto; font-size: 1rem; padding: 10px 20px; position: absolute; bottom: 20px; right: 20px; z-index: 201;}
+        .version-display { position: absolute; bottom: 10px; right: 10px; font-size: 12px; color: rgba(255,255,255,0.3); }
+        #mode-selection-screen, #song-selection-screen { justify-content: flex-start; padding-top: 80px; }
+        #profile-screen { justify-content: flex-start; padding-top: 80px; }
+        .game-choice-card { width: clamp(100px, 28vw, 150px); height: clamp(120px, 35vw, 200px); margin: 5px; border: 3px solid #fff; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; text-align: center; }
+        .song-list { width: 100%; max-width: 500px; height: calc(100vh - 150px); overflow-y: auto; padding: 0 10px; }
+        .song-choice { background-color: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px; cursor: pointer; position: relative; padding-bottom: 35px; text-align: left; }
+        .song-title { font-size: 1.2rem; font-weight: bold; } .song-artist { font-size: 0.9rem; opacity: 0.8; }
+        .song-highscore { position: absolute; top: 15px; right: 15px; font-size: 0.9rem; }
+        .song-stars-display { position: absolute; bottom: 8px; left: 15px; font-size: 20px; } .star { color: #555; } .star.earned { color: gold; }
+        .game-ui-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+        .game-ui-container.active { display: block; }
+        .game-stats { display: none; position: fixed; top: 20px; left: 20px; right: 20px; z-index: 50; justify-content: space-between; font-size: 1.5rem; color: white; text-shadow: 2px 2px 4px black; }
+        #profile-screen .profile-content-wrapper { width: 100%; max-width: 500px; height: calc(100% - 80px); overflow-y: auto; }
+        #profile-screen .profile-content { display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px; }
+        #profile-screen .back-button-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; }
+        .profile-header { display: flex; align-items: center; gap: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; }
+        .profile-avatar { width: 80px; height: 80px; background: #555; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 40px;}
+        .profile-info { text-align: left; }
+        .profile-stats, .profile-achievements, .profile-settings { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .stat-item { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center; }
+        .stat-item .value { font-size: 1.8rem; font-weight: bold; }
+        .achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 15px; margin-top: 10px; max-height: 200px; overflow-y: auto; text-align: center;}
+        .achievement-item { background: #333; padding: 10px; border-radius: 8px; opacity: 0.4; font-size: 0.7rem; }
+        .achievement-item.unlocked { background: var(--theme-color-1); opacity: 1; }
+        .achievement-item .icon { font-size: 2rem; }
+        .settings-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        #toast-notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: var(--theme-color-1); color: white; padding: 12px 25px; border-radius: 20px; z-index: 500; font-size: 1rem; opacity: 0; transition: opacity 0.5s, top 0.5s; pointer-events: none; }
+        #toast-notification.show { opacity: 1; top: 100px; }
+        #poster-preview-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 400; }
+        #poster-canvas { border: 2px solid white; border-radius: 10px; max-width: 90%; max-height: 90%; }
+        canvas { position: absolute; top:0; left: 0; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="top-stats-bar"></div>
+    <div id="main-menu-screen" class="screen"></div>
+    <div id="mode-selection-screen" class="screen"></div>
+    <div id="song-selection-screen" class="screen"></div>
+    <div id="end-screen" class="screen"></div>
+    <div id="profile-screen" class="screen"></div>
+    <div id="tutorial-screen" class="screen"></div>
+    <div id="game-container">
+        <div class="game-stats"><span>分數: <span id="score">0</span></span><span>連擊: <span id="combo">0</span></span></div>
+        <div id="timebeat-game-area" class="game-ui-container"><canvas id="timebeat-canvas"></canvas></div>
+        <div id="conductor-game-area" class="game-ui-container"></div>
+        <div id="turntable-game-area" class="game-ui-container"></div>
+    </div>
+    <div id="poster-preview-container"></div>
+    <div id="toast-notification"></div>
+    <audio id="game-audio" preload="auto"></audio>
+    <audio id="sfx-audio" preload="auto"></audio>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 遊戲資料與模組定義 ---
+
+        const SongData = {
+            // ★★★ 新增注音遊戲的曲目資料 ★★★
+            bopomofo_cat: {
+                era: '80s',
+                title: '注音練習：貓',
+                artist: '國語作業',
+                audioSrc: 'audio/cat_song.mp3', // 請準備一個簡短的背景音
+                beatmapSrc: 'beatmaps/bopomofo_cat.json', // 我們等下會建立這個檔案
+                duration: 5000, // 5秒
+                availableModes: ['timebeat'] // 只能在 TimeBeat 模式玩
+            },
+            // --- 原有歌曲資料 ---
+            tianmimi: { era: '80s', title: '甜蜜蜜', artist: '鄧麗君', audioSrc: 'audio/甜蜜蜜.mp3', beatmapSrc: 'beatmaps/甜蜜蜜.json', duration: 21000, availableModes: ['timebeat', 'turntable'] },
+            yueliang: { era: '80s', title: '月亮代表我的心', artist: '鄧麗君', audioSrc: 'audio/月亮代表我的心.mp3', beatmapSrc: 'beatmaps/月亮代表我的心.json', duration: 17000, availableModes: ['timebeat', 'conductor'] },
+            tongnian: { era: '80s', title: '童年', artist: '羅大佑', audioSrc: 'audio/童年.mp3', beatmapSrc: 'beatmaps/童年.json', duration: 19300, availableModes: ['timebeat'] },
+            henai: { era: '90s', title: '很愛很愛你', artist: '劉若英', audioSrc: 'audio/很愛很愛你.mp3', beatmapSrc: 'beatmaps/很愛很愛你.json', duration: 17000, availableModes: ['timebeat', 'conductor'] },
+            xiaosa: { era: '90s', title: '瀟灑走一回', artist: '葉蒨文', audioSrc: 'audio/瀟灑走一回.mp3', beatmapSrc: 'beatmaps/瀟灑走一回.json', duration: 18000, availableModes: ['timebeat', 'turntable'] },
+            naner: { era: '90s', title: '男兒當自強', artist: '林子祥', audioSrc: 'audio/男兒當自強.mp3', beatmapSrc: 'beatmaps/男兒當自強.json', duration: 19100, availableModes: ['conductor', 'turntable'] }
+        };
+        const EraData = { '80s': { name: '80年代金曲', starsToUnlock: 0 }, '90s': { name: '90年代經典', starsToUnlock: 5 }};
+        
+        // ★★★ 新增注音鍵盤對應邏輯 ★★★
+        const keyMap = {
+            'b': 'ㄅ', 'p': 'ㄆ', 'm': 'ㄇ', 'f': 'ㄈ', 'd': 'ㄉ', 't': 'ㄊ', 'n': 'ㄋ', 'l': 'ㄌ', 'g': 'ㄍ', 'k': 'ㄎ', 'h': 'ㄏ', 'j': 'ㄐ', 'q': 'ㄑ', 'x': 'ㄒ', 'z': 'ㄓ', 'c': 'ㄔ', 's': 'ㄕ', 'r': 'ㄖ', 'y': 'ㄗ', 'w': 'ㄘ', 'e': 'ㄙ',
+            'a': 'ㄚ', 'o': 'ㄛ', 'i': 'ㄧ', 'u': 'ㄨ', 'v': 'ㄩ', 'e': 'ㄜ',
+            '2': 'ˊ', '3': 'ˇ', '4': 'ˋ', '5': '˙'
+        };
+        const symbolToTrack = {};
+        'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒzhchshrzcs'.split('').forEach(s => symbolToTrack[s] = 0);
+        'aoeiuü'.split('').forEach(s => symbolToTrack[s] = 1);
+        'ˊˇˋ˙'.split('').forEach(s => symbolToTrack[s] = 2);
+        // 手動補全 keyMap 裡的符號到軌道的映射
+        Object.values(keyMap).forEach(symbol => {
+            if ('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ'.includes(symbol)) symbolToTrack[symbol] = 0;
+            else if ('ㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦㄧㄨㄩ'.includes(symbol)) symbolToTrack[symbol] = 1;
+            else if ('ˊˇˋ˙'.includes(symbol)) symbolToTrack[symbol] = 2;
+        });
+
+
+        const UI = { toastEl: null, init(domRefs) { this.toastEl = domRefs.toastNotification; }, showToast(message) { if (!this.toastEl) return; this.toastEl.textContent = message; this.toastEl.classList.add('show'); setTimeout(() => this.toastEl.classList.remove('show'), 2500); } };
+        const Wallet = { coins: 0, ui: null, init(domRefs) { this.ui = domRefs.walletDisplay; this.load(); }, load() { this.coins = parseInt(localStorage.getItem('timeCoins') || '100', 10); this.updateUI(); }, save() { localStorage.setItem('timeCoins', this.coins); }, addCoins(amount) { this.coins += amount; this.updateUI(); this.save(); }, updateUI() { if (this.ui) this.ui.textContent = this.coins; }, get() { return this.coins; } };
+        const Leaderboard = { playerProgress: {}, ui: null, init(domRefs) { this.ui = domRefs.starDisplay; this.load(); }, load() { this.playerProgress = JSON.parse(localStorage.getItem('playerProgress') || '{}'); this.updateTotalStarsUI(); }, save() { localStorage.setItem('playerProgress', JSON.stringify(this.playerProgress)); }, updateSongProgress(songId, gameMode, score, stars, maxCombo) { const key = `${gameMode}-${songId}`; if (!this.playerProgress[key]) this.playerProgress[key] = { score: 0, stars: 0, maxCombo: 0 }; if (score > this.playerProgress[key].score) this.playerProgress[key].score = score; if (stars > this.playerProgress[key].stars) this.playerProgress[key].stars = stars; if (maxCombo > this.playerProgress[key].maxCombo) this.playerProgress[key].maxCombo = maxCombo; this.save(); this.updateTotalStarsUI(); }, getSongProgress(songId, gameMode) { return this.playerProgress[`${gameMode}-${songId}`]; }, getTotalStars() { return Object.values(this.playerProgress).reduce((acc, cur) => acc + (cur.stars || 0), 0); }, updateTotalStarsUI() { if (this.ui) this.ui.textContent = this.getTotalStars(); }, getMaxCombo() { return Object.values(this.playerProgress).reduce((max, song) => Math.max(max, song.maxCombo || 0), 0); }, getSongsCompleted() { return Object.keys(this.playerProgress).length; } };
+        const Achievements = { data: { first_play: { icon: '🎵', title: '初試啼聲', desc: '完成第一首歌曲', unlocked: false }, s_rank: { icon: 'S', title: 'S級評價', desc: '首次獲得S評級', unlocked: false }, combo_100: { icon: '🔥', title: '連擊狂人', desc: '最高連擊達到100', unlocked: false }, perfect_100: { icon: '🎯', title: '節拍大師', desc: '累計獲得100次Perfect', unlocked: false }, unlock_90s: { icon: '📼', title: '九零年代', desc: '解鎖90年代曲目', unlocked: false } }, stats: { perfect_hits: 0 }, init() { const savedData = JSON.parse(localStorage.getItem('achievements_data') || '{}'); const savedStats = JSON.parse(localStorage.getItem('achievements_stats') || '{}'); for (const key in this.data) { this.data[key].unlocked = savedData[key] || false; } this.stats.perfect_hits = savedStats.perfect_hits || 0; }, checkAndUnlock(endGameData) { let newAchievements = []; this.stats.perfect_hits += endGameData.hits.perfect || 0; if (!this.data.first_play.unlocked) { this.data.first_play.unlocked = true; newAchievements.push(this.data.first_play); } if (!this.data.s_rank.unlocked && endGameData.rating === 'S') { this.data.s_rank.unlocked = true; newAchievements.push(this.data.s_rank); } if (!this.data.combo_100.unlocked && endGameData.maxCombo >= 100) { this.data.combo_100.unlocked = true; newAchievements.push(this.data.combo_100); } if (!this.data.perfect_100.unlocked && this.stats.perfect_hits >= 100) { this.data.perfect_100.unlocked = true; newAchievements.push(this.data.perfect_100); } if (!this.data.unlock_90s.unlocked && endGameData.totalStars >= EraData['90s'].starsToUnlock) { this.data.unlock_90s.unlocked = true; newAchievements.push(this.data.unlock_90s); } if (newAchievements.length > 0) { this.save(); newAchievements.forEach((ach, i) => setTimeout(() => UI.showToast(`成就解鎖：${ach.title}`), i * 500)); } else { this.saveStats(); } }, save() { const dataToSave = {}; for (const key in this.data) { if(this.data[key].unlocked) dataToSave[key] = true; } localStorage.setItem('achievements_data', JSON.stringify(dataToSave)); this.saveStats(); }, saveStats() { localStorage.setItem('achievements_stats', JSON.stringify(this.stats)); } };
+        const Profile = { init(domRefs) { domRefs.mainMenuScreen.addEventListener('click', e => { if (e.target.id === 'profile-btn') { this.render(domRefs); Game.showScreen('profile-screen'); } }); }, render(domRefs) { const screen = domRefs.profileScreen; screen.innerHTML = `<div class="profile-content-wrapper"><div class="profile-content"><div class="profile-header"><div class="profile-avatar">👤</div><div class="profile-info"><h2 style="margin:0;">懷舊玩家</h2><p>⭐ ${Leaderboard.getTotalStars()} | 🪙 ${Wallet.get()}</p></div></div><div class="profile-stats"><h3>生涯統計</h3><div class="stats-grid"><div class="stat-item"><div class="value">${Leaderboard.getMaxCombo()}</div><div>歷史最高連擊</div></div><div class="stat-item"><div class="value">${Leaderboard.getSongsCompleted()}</div><div>總通關歌曲數</div></div></div></div><div class="profile-achievements"><h3>成就殿堂</h3><div class="achievements-grid">${Object.values(Achievements.data).map(ach => `<div class="achievement-item ${ach.unlocked ? 'unlocked' : ''}" title="${ach.desc}"><div class="icon">${ach.icon}</div><div>${ach.title}</div></div>`).join('')}</div></div><div class="profile-settings"><h3>設定</h3><div class="settings-item"><span>背景音樂</span><input type="range" id="bgm-volume" min="0" max="1" step="0.1" value="${Game.dom.gameAudio.volume}"></div><div class="settings-item"><span>遊戲音效</span><input type="range" id="sfx-volume" min="0" max="1" step="0.1" value="${Game.dom.sfxAudio.volume}"></div><button class="retro-button" id="reset-tutorial-btn" style="width:100%; margin-top:10px;">重設教學提示</button></div></div></div><div class="back-button-container"><button class="retro-button" id="back-to-main-from-profile-btn" style="width:100%; margin:0;">返回主選單</button></div>`; document.getElementById('back-to-main-from-profile-btn').addEventListener('click', () => Game.showScreen('main-menu-screen')); document.getElementById('bgm-volume').addEventListener('input', (e) => Game.dom.gameAudio.volume = e.target.value); document.getElementById('sfx-volume').addEventListener('input', (e) => Game.dom.sfxAudio.volume = e.target.value); document.getElementById('reset-tutorial-btn').addEventListener('click', () => { localStorage.removeItem('tutorialShown'); UI.showToast('教學提示已重設！'); Tutorial.init(Game.dom); }); } };
+        const Poster = { generate(song, result, domRefs) { const container = domRefs.posterPreviewContainer; container.innerHTML = '<canvas id="poster-canvas"></canvas>'; const canvas = container.querySelector('canvas'); const ctx = canvas.getContext('2d'); canvas.width = 400; canvas.height = 600; ctx.fillStyle = '#1a1a3e'; ctx.fillRect(0,0,400,600); ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.font = 'bold 32px sans-serif'; ctx.fillText(song.title, 200, 100); ctx.font = '20px sans-serif'; ctx.fillText(song.artist, 200, 140); ctx.font = '24px sans-serif'; ctx.fillText(`得分: ${result.score}`, 200, 250); ctx.fillText(`最高連擊: ${result.maxCombo}`, 200, 290); ctx.font = 'bold 60px sans-serif'; ctx.fillStyle = 'gold'; ctx.fillText(result.rating, 200, 400); ctx.font = 'italic 24px sans-serif'; ctx.fillStyle = 'cyan'; ctx.fillText('時光迴廊', 200, 500); ctx.font = '14px sans-serif'; ctx.fillStyle = 'lightgray'; ctx.fillText('長按圖片即可儲存分享', 200, 550); container.style.display = 'flex'; container.addEventListener('click', () => container.style.display = 'none', {once: true}); } };
+        const SongSelection = { render(gameMode, domRefs) { const songList = domRefs.songSelectionScreen.querySelector('#song-list'); songList.innerHTML = ''; for (const songId in SongData) { const song = SongData[songId]; if (song.availableModes.includes(gameMode)) { const el = document.createElement('div'); el.className = 'song-choice'; const progress = Leaderboard.getSongProgress(songId, gameMode); const highscore = progress?.score ? `<div class="song-highscore">最高分: ${progress.score}</div>` : ''; let starsHTML = '<div class="song-stars-display">'; const savedStars = progress?.stars || 0; for(let i = 0; i < 3; i++) { starsHTML += `<span class="star ${i < savedStars ? 'earned' : ''}">★</span>`; } starsHTML += '</div>'; el.innerHTML = `<div class="song-title">${song.title}</div><div class="song-artist">${song.artist}</div>${highscore}${starsHTML}`; el.onclick = () => Game.startGame(songId); songList.appendChild(el); } } } };
+        
+        // --- 遊戲模式模組 ---
+        const TimeBeat = {
+            canvas: null, ctx: null, notes: [], beatmap: [], nextNoteIndex: 0,
+            init(domRefs) { this.canvas = domRefs.gameContainer.querySelector('#timebeat-canvas'); if(this.canvas) {this.ctx = this.canvas.getContext('2d'); window.addEventListener('resize', this.resize.bind(this));} },
+            resize() { if (this.canvas) { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; } },
+            
+            // ★★★ 修改 ★★★: 直接使用帶有 track 和 symbol 的譜面資料
+            start(beatmap) {
+                this.resize();
+                this.notes = [];
+                this.nextNoteIndex = 0;
+                this.beatmap = beatmap; // 直接使用從 JSON 載入的完整譜面
+                // 不再需要 this.boundHandleTap，因為我們改用全域的鍵盤監聽
+            },
+            stop() { /* 停止函式不需改變 */ },
+            update(elapsedTime) {
+                while (this.nextNoteIndex < this.beatmap.length && this.beatmap[this.nextNoteIndex].time < elapsedTime + 2000) {
+                    this.notes.push({ ...this.beatmap[this.nextNoteIndex], y: 0, active: true });
+                    this.nextNoteIndex++;
+                }
+                const hitLineY = this.canvas.height * 0.85;
+                this.notes.forEach(note => {
+                    if (note.active) {
+                        const timeDiff = note.time - elapsedTime;
+                        note.y = hitLineY - (timeDiff * 0.8);
+                        if (timeDiff < -150) { note.active = false; Game.updateCombo(false); }
+                    }
+                });
+                this.notes = this.notes.filter(n => n.active || n.y < this.canvas.height + 50);
+            },
+            // ★★★ 修改 ★★★: 將畫圓圈改成畫注音符號
+            draw() {
+                if(!this.ctx) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                const hitLineY = this.canvas.height * 0.85;
+                this.ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+                this.ctx.fillRect(0, hitLineY - 30, this.canvas.width, 60);
+
+                this.notes.forEach(note => {
+                    if (note.active) {
+                        const trackWidth = this.canvas.width / 3;
+                        const x = trackWidth * note.track + trackWidth / 2;
+                        
+                        // 根據軌道給予不同顏色
+                        if (note.track === 0) this.ctx.fillStyle = '#f56565';      // 聲母
+                        else if (note.track === 1) this.ctx.fillStyle = '#48bb78'; // 韻母
+                        else this.ctx.fillStyle = '#ed8936';                       // 聲調
+                        
+                        this.ctx.font = 'bold 40px sans-serif';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        
+                        // 繪製注音符號
+                        this.ctx.fillText(note.symbol, x, note.y);
+                    }
+                });
+            },
+            handleTap(e) { /* 這個函式現在可以不用了，但保留著以防萬一 */ },
+            getNotes() { return this.notes; }
+        };
+        const Conductor = { /* ... 此模組維持原樣 ... */ gameArea: null, notes: [], beatmap: [], nextNoteIndex: 0, init(domRefs) { this.gameArea = domRefs.gameContainer.querySelector('#conductor-game-area'); }, start(beatmap) { this.notes = []; this.nextNoteIndex = 0; this.beatmap = beatmap; this.gameArea.innerHTML = ''; }, stop() { this.gameArea.innerHTML = ''; }, update(elapsedTime) { while (this.nextNoteIndex < this.beatmap.length && this.beatmap[this.nextNoteIndex].time <= elapsedTime + 200) { const noteData = this.beatmap[this.nextNoteIndex]; const noteEl = this.createNoteElement(noteData, this.nextNoteIndex); this.gameArea.appendChild(noteEl); this.notes.push({ ...noteData, el: noteEl, active: true, id: this.nextNoteIndex }); this.nextNoteIndex++; } this.notes.forEach(note => { if (note.active && elapsedTime > note.time + 800) { note.active = false; note.el.style.opacity = '0'; Game.updateCombo(false); } }); this.notes = this.notes.filter(note => note.active); }, draw() {}, createNoteElement(noteData, id) { const el = document.createElement('div'); const isStrong = noteData.type === 'strong'; const size = isStrong ? 80 : 50; el.style.cssText = `position:absolute; width:${size}px; height:${size}px; background:${isStrong ? 'orangered':'cyan'}; border-radius:50%; transition: transform 0.1s, opacity 0.3s; transform: scale(0); opacity: 1; box-shadow: 0 0 15px ${isStrong ? 'orangered':'cyan'}; cursor: pointer;`; el.style.left = `${10 + Math.random() * 70}%`; el.style.top = `${15 + Math.random() * 70}%`; el.dataset.id = id; setTimeout(() => el.style.transform = 'scale(1)', 50); el.addEventListener('pointerdown', e => { e.stopPropagation(); const thisNote = this.notes.find(n => n.id == e.currentTarget.dataset.id); if (!thisNote?.active) return; let hasSwiped = false; const onPointerMove = () => hasSwiped = true; const onPointerUp = () => { document.removeEventListener('pointermove', onPointerMove); document.removeEventListener('pointerup', onPointerUp); if(hasSwiped) { Game.handleHit(performance.now() - Game.getStartTime(), { id: thisNote.id }); thisNote.active = false; e.currentTarget.style.transform = 'scale(1.2)'; e.currentTarget.style.opacity = '0'; } }; document.addEventListener('pointermove', onPointerMove); document.addEventListener('pointerup', onPointerUp); }); return el; }, getNotes() { return this.notes; } };
+        const Turntable = { /* ... 此模組維持原樣 ... */ canvas: null, ctx: null, notes: [], beatmap: [], nextNoteIndex: 0, rotation: 0, TONEARM_ANGLE: Math.PI / 4, JUDGEMENT_RADIUS_RATIO: 0.85, ROTATION_SPEED: (10 * Math.PI / 9), NOTE_LIFESPAN: 6000, init(domRefs) { this.gameArea = domRefs.gameContainer.querySelector('#turntable-game-area'); this.gameArea.innerHTML = `<canvas id="turntable-canvas"></canvas><div id="turntable-tonearm"></div>`; this.canvas = this.gameArea.querySelector('canvas'); this.tonearm = this.gameArea.querySelector('div'); if(this.canvas) {this.ctx = this.canvas.getContext('2d'); window.addEventListener('resize', this.resize.bind(this));} }, resize() { if(this.canvas){ this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; } if(this.tonearm) { this.tonearm.style.top = `calc(50% - ${Math.min(window.innerWidth, window.innerHeight) * 0.4 * 0.9}px)`; this.tonearm.style.left = `calc(50% + ${Math.min(window.innerWidth, window.innerHeight) * 0.4 * 0.1}px)`; } }, start(beatmap) { this.resize(); this.notes = []; this.nextNoteIndex = 0; this.rotation = 0; this.beatmap = beatmap.map((note, i) => ({ ...note, type: Math.random() > 0.7 ? 'strong' : 'tap', startAngle: (i * 2.3) % (Math.PI * 2) })); this.boundHandleInput = this.handleInput.bind(this); this.canvas.addEventListener('pointerdown', this.boundHandleInput); }, stop() { if(this.canvas) this.canvas.removeEventListener('pointerdown', this.boundHandleInput); }, update(elapsedTime) { this.rotation = (elapsedTime * 0.001) * this.ROTATION_SPEED; while (this.nextNoteIndex < this.beatmap.length && this.beatmap[this.nextNoteIndex].time < elapsedTime + this.NOTE_LIFESPAN) { this.notes.push({ ...this.beatmap[this.nextNoteIndex], active: true, spawnTime: elapsedTime }); this.nextNoteIndex++; } this.notes.forEach(note => { if (note.active) { const lifeTime = elapsedTime - note.spawnTime; note.radiusRatio = lifeTime / this.NOTE_LIFESPAN; if (note.radiusRatio > 1.15) { note.active = false; Game.updateCombo(false); } } }); this.notes = this.notes.filter(n => n.active); }, draw() { if(!this.ctx) return; const { width, height } = this.canvas; const centerX = width / 2; const centerY = height / 2; const maxRadius = Math.min(width, height) * 0.4; const judgementRadius = maxRadius * this.JUDGEMENT_RADIUS_RATIO; this.ctx.clearRect(0, 0, width, height); this.ctx.save(); this.ctx.translate(centerX, centerY); this.ctx.rotate(this.rotation); this.ctx.strokeStyle = '#444'; this.ctx.lineWidth = 1; for(let i=0.1; i < 1; i+= 0.1) { this.ctx.beginPath(); this.ctx.arc(0, 0, maxRadius * i, 0, Math.PI * 2); this.ctx.stroke(); } this.ctx.restore(); this.ctx.strokeStyle = 'gold'; this.ctx.lineWidth = 2; this.ctx.beginPath(); this.ctx.arc(centerX, centerY, judgementRadius, 0, Math.PI * 2); this.ctx.stroke(); this.notes.forEach(note => { if(note.active && note.radiusRatio > 0){ const angle = this.rotation + note.startAngle; const radius = judgementRadius * note.radiusRatio; const x = centerX + radius * Math.cos(angle); const y = centerY + radius * Math.sin(angle); this.ctx.fillStyle = note.type === 'strong' ? 'orangered' : 'cyan'; this.ctx.beginPath(); this.ctx.arc(x, y, 15 * (note.radiusRatio > 0.5 ? 1 : note.radiusRatio * 2), 0, Math.PI * 2); this.ctx.globalAlpha = note.radiusRatio; this.ctx.fill(); this.ctx.globalAlpha = 1; } }); }, handleInput(e) { const elapsedTime = performance.now() - Game.getStartTime(); let scratchActive = false; const onPointerMove = () => scratchActive = true; const onPointerUp = () => { document.removeEventListener('pointermove', onPointerMove); document.removeEventListener('pointerup', onPointerUp); Game.handleHit(elapsedTime, { type: scratchActive ? 'strong' : 'tap' }); }; document.addEventListener('pointermove', onPointerMove); document.addEventListener('pointerup', onPointerUp); }, getNotes() { return this.notes; }, getRotation() { return this.rotation; } };
+        const Tutorial = { /* ... 此模組維持原樣 ... */ };
+
+        // --- 核心遊戲控制器 ---
+        // --- 核心遊戲控制器 ---
+        const Game = {
+            state: { activeGame: null, currentSongId: null, score: 0, combo: 0, maxCombo: 0, isPlaying: false, startTime: 0, beatmap: [], hits: {}, rating: 'C' },
+            dom: {},
+            modules: { timebeat: TimeBeat, conductor: Conductor, turntable: Turntable },
+            init() { this.cacheDOM(); this.injectHTML(); this.attachListeners(); UI.init(this.dom); Wallet.init(this.dom); Leaderboard.init(this.dom); Achievements.init(); Profile.init(this.dom); Object.values(this.modules).forEach(m => m.init?.(this.dom)); Tutorial.init(this.dom); this.showScreen('main-menu-screen'); },
+            cacheDOM() { const required = ['main-menu-screen', 'mode-selection-screen', 'song-selection-screen', 'end-screen', 'profile-screen', 'poster-preview-container', 'toast-notification', 'game-audio', 'sfx-audio', 'top-stats-bar', 'game-container', 'tutorial-screen']; required.forEach(id => this.dom[id.replace(/-(\w)/g, (m, g) => g.toUpperCase())] = document.getElementById(id)); this.dom.allScreens = document.querySelectorAll('.screen'); this.dom.walletDisplay = this.dom.topStatsBar.querySelector('.wallet-display span'); this.dom.starDisplay = this.dom.topStatsBar.querySelector('.star-display span'); this.dom.gameStats = this.dom.gameContainer.querySelector('.game-stats'); this.dom.score = this.dom.gameStats.querySelector('#score'); this.dom.combo = this.dom.gameStats.querySelector('#combo'); },
+            injectHTML() {
+                this.dom.topStatsBar.innerHTML = `<div class="stats-display star-display">⭐ <span>0</span></div><div class="stats-display wallet-display">🪙 <span>0</span></div>`;
+                this.dom.mainMenuScreen.innerHTML = `<h1>時光迴廊</h1><div class="main-menu-buttons"><button class="retro-button" id="start-free-play-btn">開始遊戲</button></div><button class="retro-button small" id="profile-btn">個人中心</button><div class="version-display">v24.3-bopomofo</div>`;
+                this.dom.modeSelectionScreen.innerHTML = `<h1 id="mode-select-title">選擇模式</h1><div style="display:flex; flex-wrap:wrap; justify-content:center;"><div class="game-choice-card" data-gametype="timebeat"><h2>時光節拍</h2></div><div class="game-choice-card" data-gametype="conductor"><h2>指揮家</h2></div><div class="game-choice-card" data-gametype="turntable"><h2>時光唱盤</h2></div></div><button class="retro-button" id="back-to-main-btn">返回主選單</button>`;
+                this.dom.songSelectionScreen.innerHTML = `<h1 id="song-list-title">選擇歌曲</h1><div id="song-list" class="song-list"></div><button class="retro-button" id="back-to-mode-btn">返回模式選擇</button>`;
+                this.dom.tutorialScreen.innerHTML = `<div id="tutorial-background"></div><div id="tutorial-content"><h2>玩法教學</h2><p id="tutorial-text"></p><div id="tutorial-animation-container"></div><button class="retro-button" id="close-tutorial-btn">我明白了！</button></div>`;
+            },
+            attachListeners() {
+                this.dom.mainMenuScreen.addEventListener('click', e => { if (e.target.id === 'start-free-play-btn') this.showScreen('mode-selection-screen'); });
+                this.dom.modeSelectionScreen.addEventListener('click', async e => { const card = e.target.closest('.game-choice-card'); if (card) { this.state.activeGame = card.dataset.gametype; if (Tutorial.shouldShow(this.state.activeGame)) { await Tutorial.show(this.state.activeGame); } SongSelection.render(this.state.activeGame, this.dom); this.showScreen('song-selection-screen'); } if (e.target.id === 'back-to-main-btn') this.showScreen('main-menu-screen'); });
+                this.dom.songSelectionScreen.addEventListener('click', e => { if (e.target.id === 'back-to-mode-btn') this.showScreen('mode-selection-screen'); });
+
+                window.addEventListener('keydown', (e) => {
+                    if (this.state.activeGame !== 'timebeat' || !this.state.isPlaying) return;
+                    const inputSymbol = keyMap[e.key.toLowerCase()];
+                    if (inputSymbol) {
+                        const targetTrack = symbolToTrack[inputSymbol];
+                        if (targetTrack !== undefined) {
+                            this.handleHit(performance.now() - this.getStartTime(), { track: targetTrack, symbol: inputSymbol });
+                        }
+                    }
+                });
+            },
+            showScreen(screenId) { this.dom.allScreens.forEach(s => s.classList.remove('active')); this.dom.gameStats.style.display = 'none'; document.querySelectorAll('.game-ui-container').forEach(c => c.classList.remove('active')); if (screenId === 'none') { this.dom.gameStats.style.display = 'flex'; const gameArea = document.getElementById(`${this.state.activeGame}-game-area`); if (gameArea) gameArea.classList.add('active'); } else { const screen = document.getElementById(screenId); if (screen) screen.classList.add('active'); } },
+            async startGame(songId) {
+                // 在小遊戲模式下，我們直接玩預設的 'bopomofo_cat'
+                const targetSongId = songId || 'bopomofo_cat';
+                this.state.currentSongId = targetSongId;
+                const song = SongData[targetSongId];
+                
+                if(song.beatmapSrc && !song.notes) {
+                    try { const response = await fetch(song.beatmapSrc); if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const rawBeatmap = await response.json(); song.notes = rawBeatmap; } catch (e) { alert("譜面載入失敗: " + e.message); return; }
+                }
+                Object.assign(this.state, { score: 0, combo: 0, maxCombo: 0, hits: {perfect:0, good:0, miss:0}, isPlaying: true });
+                if(this.dom.score) this.dom.score.textContent = 0; if(this.dom.combo) this.dom.combo.textContent = 0;
+                
+                // 在小遊戲模式下，不需要顯示選單，直接進入遊戲
+                this.showScreen('none'); 
+                const gameModule = this.modules.timebeat; // 強制使用 timebeat 模式
+
+                setTimeout(() => { this.state.startTime = performance.now(); this.dom.gameAudio.src = song.audioSrc; this.dom.gameAudio.play().catch(e => console.error("Audio play failed:", e)); gameModule.start(song.notes); this.gameLoop(); }, 500); // 縮短延遲
+            },
+            gameLoop() { if (!this.state.isPlaying) return; const elapsedTime = performance.now() - this.state.startTime; const gameModule = this.modules[this.state.activeGame]; gameModule.update(elapsedTime); gameModule.draw(); if (elapsedTime >= SongData[this.state.currentSongId].duration) { this.endGame(); return; } this.state.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this)); },
+            handleHit(elapsedTime, hitData) {
+                if (!this.state.isPlaying) return;
+                const gameModule = this.modules[this.state.activeGame]; let noteToHit = null;
+                if (this.state.activeGame === 'timebeat') {
+                    noteToHit = gameModule.getNotes().find(n => n.active && n.track === hitData.track && n.symbol === hitData.symbol && Math.abs(n.time - elapsedTime) < 150);
+                }
+                
+                if (noteToHit) { noteToHit.active = false; const timeDiff = Math.abs(noteToHit.time - elapsedTime); this.state.hits.good = this.state.hits.good || 0; this.state.hits.perfect = this.state.hits.perfect || 0; if (timeDiff < 80) { this.state.score += 100 + this.state.combo * 5; this.state.hits.perfect++; } else { this.state.score += 50; this.state.hits.good++; } this.updateCombo(true); }
+            },
+            updateCombo(isHit){ if(isHit) {this.state.combo++; this.state.maxCombo = Math.max(this.state.maxCombo, this.state.combo);} else {this.state.combo = 0; if(this.state.isPlaying) this.state.hits.miss = (this.state.hits.miss || 0) + 1;} if(this.dom.combo) this.dom.combo.textContent = this.state.combo; if(this.dom.score) this.dom.score.textContent = this.state.score; },
+            
+            // ★★★ 唯一保留的 endGame 函式 (簡化版) ★★★
+            endGame() {
+                if (!this.state.isPlaying) return;
+                this.state.isPlaying = false; 
+                if(this.state.animationFrameId) cancelAnimationFrame(this.state.animationFrameId);
+                
+                // 確保遊戲模組和音訊都已停止
+                if (this.modules[this.state.activeGame]) {
+                    this.modules[this.state.activeGame].stop();
+                }
+                this.dom.gameAudio.pause();
+                
+                // 1. 簡單提示玩家
+                alert(`國語作業完成！`); 
+
+                // 2. 透過 postMessage 通知主遊戲
+                parent.postMessage('chinese-game-complete', '*');
+            },
+
+            getStartTime: () => Game.state.startTime,
+        };
+
+        // ★★★ 修改 ★★★: 為了讓小遊戲直接啟動，我們不再等待點擊，而是直接初始化
+        // Game.init(); // 原本的啟動方式是顯示主選單
+        // 改為直接啟動注音遊戲
+        Game.cacheDOM();
+        Game.state.activeGame = 'timebeat'; // 鎖定為 timebeat 模式
+        Game.modules.timebeat.init(Game.dom); // 只初始化需要的模組
+        Game.startGame(); // 不帶參數，直接玩預設的注音關卡
+    }); 
+
+    </script>
+</body>
+</html>

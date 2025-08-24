@@ -1,0 +1,5 @@
+[
+  { "time": 1.0, "type": "tap", "symbol": "ㄇ", "track": 0 },
+  { "time": 1.5, "type": "tap", "symbol": "ㄠ", "track": 1 },
+  { "time": 2.0, "type": "tap", "symbol": "ˊ", "track": 2 }
+]
