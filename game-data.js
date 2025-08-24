@@ -46,17 +46,40 @@ var mapDataCh1 = {
     'end_home_alone': { type: 'end', id: 'end_home_alone', pos: { x: 25, y: 15 }, title: '爸媽還是沒回來...', description: '回到家，才想起爸媽今晚有事不回來...', img: 'assets/end_home_alone.png', nextChapter: true }
 };
 
-// --- 第二章地圖資料 ---
+// --- 第二章地圖資料 (已按新流程修正) ---
 var mapDataCh2 = {
     'ch2_start': { type: 'choice', pos: { x: 50, y: 92 }, text: '我回來了...', choices: [{ text: '回家功課一大堆', target: 'ch2_homework_math' }] },
+    
+    // 1. 依序做功課
     'ch2_homework_math': { type: 'minigame-math', pos: { x: 65, y: 80 }, text: '先算數學吧！', gameUrl: 'homework-game.html', next: 'ch2_homework_chinese' },
-    'ch2_homework_chinese': { type: 'minigame-chinese-pinyin', pos: { x: 35, y: 70 }, text: '再來是國語作業', gameUrl: 'chinese-game.html', next: 'ch2_choice_after_homework' },
-    'ch2_choice_after_homework': { type: 'choice', pos: { x: 50, y: 60 }, text: '作業寫完了！要做什麼呢？', choices: [ { text: '看電視', target: 'ch2_watch_tv' }, { text: '整理房間', target: 'ch2_tidy_room' }, { text: '幫忙家庭代工', target: 'ch2_assembly' } ]},
-    'ch2_watch_tv': { type: 'minigame-jigsaw', pos: { x: 50, y: 48 }, text: '來看電視！', gameUrl: 'jigsaw-game.html', next: 'ch2_random_mom_shout' },
-    'ch2_random_mom_shout': { type: 'conditional_random', pos: { x: 50, y: 38 }, possible_ends: [ 'ch2_tidy_room', 'ch2_assembly' ] },
+    'ch2_homework_chinese': { type: 'minigame-chinese-pinyin', pos: { x: 35, y: 70 }, text: '再來是國語作業', gameUrl: 'chinese-game.html', next: 'ch2_watch_tv' },
+
+    // 2. 直接去看電視
+    'ch2_watch_tv': { 
+        type: 'minigame-jigsaw', 
+        pos: { x: 50, y: 55 }, 
+        text: '作業寫完了，來看電視！', 
+        gameUrl: 'jigsaw-game.html', 
+        next: 'ch2_choice_chores' 
+    },
+
+    // 3. 看完電視後，選擇做家事
+    'ch2_choice_chores': { 
+        type: 'choice', 
+        pos: { x: 50, y: 40 }, 
+        text: "媽媽說：「看完電視，選個家事來做！」", 
+        choices: [ 
+            { text: '整理房間', target: 'ch2_tidy_room' },
+            { text: '幫忙家庭代工', target: 'ch2_assembly' }
+        ]
+    },
+
+    // 4. 做家事分支
     'ch2_tidy_room': { type: 'minigame-room-tidy', pos: { x: 25, y: 25 }, text: '只好去整理房間了', gameUrl: 'room-tidy.html', next: 'ch2_end' },
     'ch2_assembly': { type: 'minigame-assembly', pos: { x: 75, y: 25 }, text: '來幫忙做點加工', gameUrl: 'assembly-game.html', next: 'ch2_end' },
-    'ch2_end': { type: 'end', id: 'ch2_end', pos: { x: 50, y: 10 }, title: '太睏了', description: '明天去廟仔口搧尪仔標...', img: 'assets/ch2_end.png' }
+
+    // 5. 結局
+    'ch2_end': { type: 'end', id: 'ch2_end', pos: { x: 50, y: 10 }, title: '太睏了', description: '忙了一天，終於可以睡覺了...', img: 'assets/ch2_end.png' }
 };
 
 // --- 注音遊戲資料 ---
