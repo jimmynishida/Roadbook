@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (event.source !== iframe.contentWindow) return;
                 if (event.data === completionMessage) {
                     window.removeEventListener('message', messageHandler);
+                    document.getElementById('choice-overlay').classList.add('hidden');
                     minigameContainer.classList.add('hidden');
                     gameArea.classList.remove('hidden');
                     resolve();
@@ -62,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 puzzleId: puzzleData.id, 
                 onComplete: () => {
                     root.unmount(); 
+                    document.getElementById('choice-overlay').classList.add('hidden');
                     minigameContainer.classList.add('hidden');
                     gameArea.classList.remove('hidden');
                     resolve();
@@ -196,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollMap.style.backgroundImage = "url('assets/map-bg-ch2.png')";
             scrollMap.style.backgroundColor = "#5d4a43"; 
         } else {
-            scrollMap.style.backgroundImage = "url('assets/map-bg-ch1.png')";
+            scrollMap.style.backgroundImage = "url('assets/map-bg-ch1.jpg')";
             scrollMap.style.backgroundColor = "#f0e6d2";
         }
         scrollMap.style.backgroundSize = "cover";
