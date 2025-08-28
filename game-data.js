@@ -51,8 +51,30 @@ var mapDataCh2 = {
     'ch2_start': { type: 'choice', pos: { x: 50, y: 92 }, text: '我回來了...', choices: [{ text: '回家功課一大堆', target: 'ch2_homework_math' }] },
     
     // 1. 依序做功課
-    'ch2_homework_math': { type: 'minigame-math', pos: { x: 65, y: 80 }, text: '先算數學吧！', gameUrl: 'homework-game.html', next: 'ch2_homework_chinese' },
-    'ch2_homework_chinese': { type: 'minigame-chinese-pinyin', pos: { x: 35, y: 70 }, text: '再來是國語作業', gameUrl: 'chinese-game.html', next: 'ch2_watch_tv' },
+    'ch2_homework_math': { 
+    type: 'minigame-math', 
+    pos: { x: 65, y: 80 }, 
+    text: '先算數學吧！', 
+    gameUrl: 'homework-game.html', 
+    // ★★★ 將 next 指向新的過場節點 ★★★
+    next: 'ch2_transition_to_chinese' 
+},
+
+// ★★★ 新增這個過場節點 ★★★
+'ch2_transition_to_chinese': {
+    type: 'event', // 事件節點會自動停留一下再繼續
+    pos: { x: 50, y: 75 }, // 放在兩個作業節點之間
+    text: '呼...數學寫完了，還有國語...',
+    next: 'ch2_homework_chinese'
+},
+
+'ch2_homework_chinese': { 
+    type: 'minigame-chinese-pinyin', 
+    pos: { x: 35, y: 70 }, 
+    text: '再來是國語作業', 
+    gameUrl: 'chinese-game.html', 
+    next: 'ch2_watch_tv' 
+},
 
     // 2. 直接去看電視
     'ch2_watch_tv': { 
@@ -79,7 +101,7 @@ var mapDataCh2 = {
     'ch2_assembly': { type: 'minigame-assembly', pos: { x: 75, y: 25 }, text: '來幫忙做點加工', gameUrl: 'assembly-game.html', next: 'ch2_end' },
 
     // 5. 結局
-    'ch2_end': { type: 'end', id: 'ch2_end', pos: { x: 50, y: 10 }, title: '太睏了', description: '忙了一天，終於可以睡覺了...', img: 'assets/ch2_end.png' }
+    'ch2_end': { type: 'end', id: 'ch2_end', pos: { x: 50, y: 10 }, title: '太睏了', description: '我要睡覺了...', img: 'assets/ch2_end.png' ,nextChapter: true}
 };
 
 // --- 注音遊戲資料 ---

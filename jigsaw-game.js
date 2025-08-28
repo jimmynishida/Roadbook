@@ -39,35 +39,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentPuzzleData = availablePuzzles.pop(); 
         const gridSize = currentPuzzleData.gridSize;
 
-        puzzleTitle.textContent = `第 ${currentLevel} 關：拼湊「${currentPuzzleData.title}」的回憶`;
-        puzzleContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+        puzzleTitle.textContent = `第 ${currentLevel} 關：${currentPuzzleData.title} (記住它!)`;
         
-        let pieces = [];
-        for (let i = 0; i < gridSize * gridSize; i++) {
-            const piece = document.createElement('div');
-            piece.className = 'puzzle-piece';
-            piece.draggable = true;
-            piece.style.backgroundImage = `url(${currentPuzzleData.imageSrc})`;
-            
-            const bgSize = gridSize * 100;
-            const pieceSize = 100 / (gridSize - 1);
-            const col = i % gridSize;
-            const row = Math.floor(i / gridSize);
-            
-            piece.style.backgroundSize = `${bgSize}% ${bgSize}%`;
-            piece.style.backgroundPosition = `${col * pieceSize}% ${row * pieceSize}%`;
-            
-            piece.dataset.correctIndex = i;
-            pieces.push(piece);
-        }
+        // ★★★ 預覽邏輯 ★★★
+        const previewImage = document.createElement('img');
+        previewImage.src = currentPuzzleData.imageSrc;
+        previewImage.style.width = '100%';
+        previewImage.style.height = '100%';
+        previewImage.style.objectFit = 'contain';
+        previewImage.style.borderRadius = '5px';
+        puzzleContainer.appendChild(previewImage);
 
-        // 確保拼圖至少有一個碎片錯位，避免初始狀態即完成
-        do {
-            pieces.sort(() => Math.random() - 0.5);
-        } while (isSolved(pieces));
-        
-        pieces.forEach(p => puzzleContainer.appendChild(p));
-        addEventListeners();
+        setTimeout(() => {
+            puzzleContainer.innerHTML = ''; // 清空預覽圖
+            puzzleTitle.textContent = `第 ${currentLevel} 關：拼湊「${currentPuzzleData.title}」的回憶`;
+            puzzleContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            
+            let pieces = [];
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'puzzle-piece';
+                piece.draggable = true;
+                piece.style.backgroundImage = `url(${currentPuzzleData.imageSrc})`;
+                
+                const bgSize = gridSize * 100;
+                const pieceSize = 100 / (gridSize - 1);
+                const col = i % gridSize;
+                const row = Math.floor(i / gridSize);
+                
+                piece.style.backgroundSize = `${bgSize}% ${bgSize}%`;
+                piece.style.backgroundPosition = `${col * pieceSize}% ${row * pieceSize}%`;
+                
+                piece.dataset.correctIndex = i;
+                pieces.push(piece);
+            }
+
+            do {
+                pieces.sort(() => Math.random() - 0.5);
+            } while (isSolved(pieces));
+            
+            pieces.forEach(p => puzzleContainer.appendChild(p));
+            addEventListeners();
+
+        }, 3000); // 預覽 3 秒
     }
 
     function addEventListeners() {
@@ -93,8 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (draggedPiece && draggedPiece !== droppedOnPiece) {
             const children = Array.from(puzzleContainer.children);
             const draggedIndex = children.indexOf(draggedPiece);
-            const droppedIndex = children.indexOf(droppedOnPiece);
-
+            
             puzzleContainer.replaceChild(draggedPiece, droppedOnPiece);
             puzzleContainer.insertBefore(droppedOnPiece, children[draggedIndex]);
             
@@ -115,6 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.classList.remove('invisible');
         draggedPiece = null;
     }
+
+
 
     function isSolved(piecesToCheck) {
         return piecesToCheck.every((piece, index) => Number(piece.dataset.correctIndex) === index);

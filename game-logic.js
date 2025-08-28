@@ -3,6 +3,10 @@
 // ========================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    function cleanupUIBeforeContinue() {
+    document.getElementById('choice-overlay').classList.add('hidden');
+    // 未來如果還有其他可能殘留的UI，也可以在這裡一併隱藏
+}
 
     // --- 統一宣告所有網頁元素 ---
     const startScreen = document.getElementById('start-screen');
@@ -40,18 +44,21 @@ document.addEventListener('DOMContentLoaded', () => {
             gameArea.classList.add('hidden');
             minigameContainer.classList.remove('hidden');
             const messageHandler = function(event) {
-                if (event.source !== iframe.contentWindow) return;
-                if (event.data === completionMessage) {
-                    window.removeEventListener('message', messageHandler);
-                    document.getElementById('choice-overlay').classList.add('hidden');
-                    minigameContainer.classList.add('hidden');
-                    gameArea.classList.remove('hidden');
-                    resolve();
-                }
-            };
-            window.addEventListener('message', messageHandler);
-        });
-    }
+            if (event.source !== iframe.contentWindow) return;
+            if (event.data === completionMessage) {
+                window.removeEventListener('message', messageHandler);
+                
+                // ★★★ 使用新的清理函式 ★★★
+                cleanupUIBeforeContinue();
+                
+                minigameContainer.classList.add('hidden');
+                gameArea.classList.remove('hidden');
+                resolve();
+            }
+        };
+        window.addEventListener('message', messageHandler);
+    });
+}
 
     function handleMemoryPuzzle(nodeData) {
         return new Promise(resolve => {
@@ -62,11 +69,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 category: nodeData.categoryFilter,
                 puzzleId: puzzleData.id, 
                 onComplete: () => {
-                    root.unmount(); 
-                    document.getElementById('choice-overlay').classList.add('hidden');
-                    minigameContainer.classList.add('hidden');
-                    gameArea.classList.remove('hidden');
-                    resolve();
+                root.unmount();
+                
+                // ★★★ 使用新的清理函式 ★★★
+                cleanupUIBeforeContinue();
+
+                minigameContainer.classList.add('hidden');
+                gameArea.classList.remove('hidden');
+                resolve();
                 }
             };
             gameArea.classList.add('hidden');
