@@ -58,7 +58,7 @@ var mapDataCh2 = {
     'ch2_watch_tv': { 
         type: 'minigame-jigsaw', 
         pos: { x: 50, y: 55 }, 
-        text: '作業寫完了，來看電視！', 
+        text: '作業寫完了，看電視去！', 
         gameUrl: 'jigsaw-game.html', 
         next: 'ch2_choice_chores' 
     },
@@ -67,7 +67,7 @@ var mapDataCh2 = {
     'ch2_choice_chores': { 
         type: 'choice', 
         pos: { x: 50, y: 40 }, 
-        text: "媽媽說：「看完電視，選個家事來做！」", 
+        text: "媽媽說：「不要看電視了，過來幫忙！」", 
         choices: [ 
             { text: '整理房間', target: 'ch2_tidy_room' },
             { text: '幫忙家庭代工', target: 'ch2_assembly' }
