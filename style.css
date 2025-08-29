@@ -302,3 +302,8 @@ p { font-size: 1.2em; line-height: 1.7; max-width: 95%; }
     min-height: 75px;
     box-sizing: border-box;
 }
+/* --- UI 優化樣式 --- */
+.choice-btn-overlay {
+    font-size: clamp(1rem, 5vw, 1.3rem); /* 增大字體並使其自適應 */
+    padding: 15px 20px; /* 增加按鈕內邊距 */
+}

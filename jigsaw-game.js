@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         puzzleTitle.textContent = `第 ${currentLevel} 關：${currentPuzzleData.title} (記住它!)`;
         
-        // ★★★ 預覽邏輯 ★★★
         const previewImage = document.createElement('img');
         previewImage.src = currentPuzzleData.imageSrc;
         previewImage.style.width = '100%';
@@ -51,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         puzzleContainer.appendChild(previewImage);
 
         setTimeout(() => {
-            puzzleContainer.innerHTML = ''; // 清空預覽圖
+            puzzleContainer.innerHTML = ''; 
             puzzleTitle.textContent = `第 ${currentLevel} 關：拼湊「${currentPuzzleData.title}」的回憶`;
             puzzleContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
             
@@ -81,36 +80,35 @@ document.addEventListener('DOMContentLoaded', () => {
             pieces.forEach(p => puzzleContainer.appendChild(p));
             addEventListeners();
 
-        }, 3000); // 預覽 3 秒
+        }, 3000); 
     }
 
     function addEventListeners() {
-        const currentPieces = document.querySelectorAll('.puzzle-piece');
-        currentPieces.forEach(piece => {
-            piece.addEventListener('dragstart', onDragStart);
-            piece.addEventListener('dragover', onDragOver);
-            piece.addEventListener('drop', onDrop);
-            piece.addEventListener('dragend', onDragEnd);
-        });
+        puzzleContainer.addEventListener('dragstart', onDragStart);
+        puzzleContainer.addEventListener('dragover', onDragOver);
+        puzzleContainer.addEventListener('drop', onDrop);
+        puzzleContainer.addEventListener('dragend', onDragEnd);
     }
 
     function onDragStart(e) {
-        draggedPiece = e.target;
-        setTimeout(() => e.target.classList.add('invisible'), 0);
+        if (e.target.classList.contains('puzzle-piece')) {
+            draggedPiece = e.target;
+            setTimeout(() => e.target.classList.add('invisible'), 0);
+        }
     }
 
     function onDragOver(e) { e.preventDefault(); }
 
     function onDrop(e) {
         e.preventDefault();
-        const droppedOnPiece = e.target;
-        if (draggedPiece && draggedPiece !== droppedOnPiece) {
-            const children = Array.from(puzzleContainer.children);
-            const draggedIndex = children.indexOf(draggedPiece);
-            
-            puzzleContainer.replaceChild(draggedPiece, droppedOnPiece);
-            puzzleContainer.insertBefore(droppedOnPiece, children[draggedIndex]);
-            
+        const dropTarget = e.target;
+        if (draggedPiece && dropTarget.classList.contains('puzzle-piece') && draggedPiece !== dropTarget) {
+            const tempNode = document.createElement('div');
+            puzzleContainer.insertBefore(tempNode, draggedPiece);
+            puzzleContainer.insertBefore(draggedPiece, dropTarget);
+            puzzleContainer.insertBefore(dropTarget, tempNode);
+            puzzleContainer.removeChild(tempNode);
+
             moves++;
             movesCounter.textContent = `步數: ${moves}`;
             
@@ -125,11 +123,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function onDragEnd(e) {
-        e.target.classList.remove('invisible');
-        draggedPiece = null;
+        if (draggedPiece) {
+            draggedPiece.classList.remove('invisible');
+            draggedPiece = null;
+        }
     }
-
-
 
     function isSolved(piecesToCheck) {
         return piecesToCheck.every((piece, index) => Number(piece.dataset.correctIndex) === index);

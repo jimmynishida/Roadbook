@@ -3,10 +3,10 @@
 // ========================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    
     function cleanupUIBeforeContinue() {
-    document.getElementById('choice-overlay').classList.add('hidden');
-    // 未來如果還有其他可能殘留的UI，也可以在這裡一併隱藏
-}
+        document.getElementById('choice-overlay').classList.add('hidden');
+    }
 
     // --- 統一宣告所有網頁元素 ---
     const startScreen = document.getElementById('start-screen');
@@ -44,21 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
             gameArea.classList.add('hidden');
             minigameContainer.classList.remove('hidden');
             const messageHandler = function(event) {
-            if (event.source !== iframe.contentWindow) return;
-            if (event.data === completionMessage) {
-                window.removeEventListener('message', messageHandler);
-                
-                // ★★★ 使用新的清理函式 ★★★
-                cleanupUIBeforeContinue();
-                
-                minigameContainer.classList.add('hidden');
-                gameArea.classList.remove('hidden');
-                resolve();
-            }
-        };
-        window.addEventListener('message', messageHandler);
-    });
-}
+                if (event.source !== iframe.contentWindow) return;
+                if (event.data === completionMessage) {
+                    window.removeEventListener('message', messageHandler);
+                    cleanupUIBeforeContinue();
+                    minigameContainer.classList.add('hidden');
+                    gameArea.classList.remove('hidden');
+                    resolve();
+                }
+            };
+            window.addEventListener('message', messageHandler);
+        });
+    }
 
     function handleMemoryPuzzle(nodeData) {
         return new Promise(resolve => {
@@ -69,14 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 category: nodeData.categoryFilter,
                 puzzleId: puzzleData.id, 
                 onComplete: () => {
-                root.unmount();
-                
-                // ★★★ 使用新的清理函式 ★★★
-                cleanupUIBeforeContinue();
-
-                minigameContainer.classList.add('hidden');
-                gameArea.classList.remove('hidden');
-                resolve();
+                    root.unmount();
+                    cleanupUIBeforeContinue();
+                    minigameContainer.classList.add('hidden');
+                    gameArea.classList.remove('hidden');
+                    resolve();
                 }
             };
             gameArea.classList.add('hidden');
@@ -133,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
              nodeData.choices.forEach(choice => {
                 const button = document.createElement('button');
                 button.textContent = choice.text;
-                button.className = 'choice-btn-overlay'; // 新增的 class
+                button.className = 'choice-btn-overlay';
                 button.onclick = () => {
                     cleanupChoiceListeners();
                     playerPath.push(choice.target);
@@ -180,20 +174,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function showEndScreen(endNode) {
-        endTitle.textContent = endNode.title;
-        endDescription.textContent = endNode.description;
-        endImageContainer.innerHTML = `<img src="${endNode.img}" alt="${endNode.title}">`;
-        gameArea.classList.add('hidden');
-        endScreen.classList.remove('hidden');
+        const endImage = new Image();
+        endImage.src = endNode.img;
 
-        if (endNode.nextChapter) {
-            nextChapterButton.style.display = 'inline-block';
-        } else {
-            nextChapterButton.style.display = 'none';
-        }
+        endImage.onload = () => {
+            endTitle.textContent = endNode.title;
+            endDescription.textContent = endNode.description;
+            endImageContainer.innerHTML = '';
+            endImageContainer.appendChild(endImage);
+
+            if (endNode.nextChapter) {
+                nextChapterButton.style.display = 'inline-block';
+            } else {
+                nextChapterButton.style.display = 'none';
+            }
+
+            gameArea.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+        };
+        
+        endImage.onerror = () => {
+            console.error("結局圖片載入失敗:", endNode.img);
+            endTitle.textContent = endNode.title;
+            endDescription.textContent = endNode.description;
+            endImageContainer.innerHTML = '<p>(圖片載入失敗)</p>';
+            if (endNode.nextChapter) nextChapterButton.style.display = 'inline-block';
+            gameArea.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+        };
     }
 
-    function initGame(map, chapter) { // <-- 新增 chapter 參數
+    function initGame(map, chapter) {
+        document.getElementById('choice-overlay').classList.add('hidden');
+
         currentMapData = map;
         playerPath = [];
         scrollMap.innerHTML = '';
@@ -250,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => runGameLogic(startNodeId), 100);
     }
 
-    // --- 事件綁定 (已更新) ---
+    // --- 事件綁定 ---
     startButton.addEventListener('click', () => initGame(mapDataCh1, 'ch1'));
     restartButton.addEventListener('click', () => initGame(mapDataCh1, 'ch1'));
     nextChapterButton.addEventListener('click', () => initGame(mapDataCh2, 'ch2'));
