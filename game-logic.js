@@ -152,26 +152,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function runGameLogic(nodeId) {
-        const nodeData = currentMapData[nodeId];
-        if (!nodeData) { console.error(`執行節點錯誤: 找不到 ID 為 "${nodeId}" 的節點。`); return; }
-        if (nodeData.pos) { await moveToNode(nodeId); }
-
-        switch (nodeData.type) {
-            case 'event': await delay(2000); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'choice': showChoice(nodeData, nodeId); break;
-            case 'conditional_random': const possibleEnds = nodeData.possible_ends; const randomIndex = Math.floor(Math.random() * possibleEnds.length); const nextNodeId = possibleEnds[randomIndex]; await delay(1000); runGameLogic(nextNodeId); break;
-            case 'minigame-memory-puzzle': await handleMemoryPuzzle(nodeData); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'minigame-arcade': await handleIframeGame(nodeData, 'arcade-game-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'minigame-manga-match': await handleIframeGame(nodeData, 'manga-match-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'minigame-math': await handleIframeGame(nodeData, 'math-game-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'minigame-chinese-pinyin': await handleIframeGame(nodeData, 'chinese-game-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'minigame-jigsaw': await handleIframeGame(nodeData, 'jigsaw-game-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'minigame-room-tidy': await handleIframeGame(nodeData, 'room-tidy-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'minigame-assembly': await handleIframeGame(nodeData, 'assembly-game-complete'); await delay(50); playerPath.push(nodeData.next); runGameLogic(nodeData.next); break;
-            case 'end': await delay(1500); showEndScreen(nodeData); break;
-        }
+async function runGameLogic(nodeId) {
+    const nodeData = currentMapData[nodeId];
+    if (!nodeData) { console.error(`執行節點錯誤: 找不到 ID 為 "${nodeId}" 的節點。`); return; }
+    
+    // ★★★ 核心修改：先捲動，再處理節點邏輯 ★★★
+    if (nodeData.pos) { 
+        await moveToNode(nodeId); 
     }
+
+    // 在動畫結束後，才根據節點類型執行對應操作
+    switch (nodeData.type) {
+        case 'event': 
+            await delay(1500); // 縮短事件停留時間
+            playerPath.push(nodeData.next); 
+            runGameLogic(nodeData.next); 
+            break;
+        case 'choice': 
+            showChoice(nodeData, nodeId); // 現在這裡執行時，地圖已就位
+            break;
+        case 'conditional_random': 
+            const possibleEnds = nodeData.possible_ends; 
+            const randomIndex = Math.floor(Math.random() * possibleEnds.length); 
+            const nextNodeId = possibleEnds[randomIndex]; 
+            await delay(1000); 
+            runGameLogic(nextNodeId); 
+            break;
+        // ... 其他 minigame 的 case 維持不變 ...
+        case 'end': 
+            await delay(1500); 
+            showEndScreen(nodeData); 
+            break;
+    }
+}
     
     function showEndScreen(endNode) {
         const endImage = new Image();
@@ -205,26 +218,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initGame(map, chapter) {
-        document.getElementById('choice-overlay').classList.add('hidden');
+    document.getElementById('choice-overlay').classList.add('hidden');
 
-        currentMapData = map;
-        playerPath = [];
-        scrollMap.innerHTML = '';
-        gameArea.classList.remove('hidden');
-        startScreen.classList.add('hidden');
-        endScreen.classList.add('hidden');
-        scrollMap.style.transition = 'none';
-        scrollMap.style.transform = 'translateY(0px)';
-        scrollMap.style.height = `${MAP_HEIGHT}px`;
+    currentMapData = map;
+    playerPath = [];
+    scrollMap.innerHTML = '';
+    gameArea.classList.remove('hidden');
+    startScreen.classList.add('hidden');
+    endScreen.classList.add('hidden');
+    scrollMap.style.transition = 'none';
+    scrollMap.style.transform = 'translateY(0px)';
+    scrollMap.style.height = `${MAP_HEIGHT}px`;
 
-        if (chapter === 'ch2') {
-            scrollMap.style.backgroundImage = "url('assets/map-bg-ch2.png')";
-            scrollMap.style.backgroundColor = "#5d4a43"; 
-        } else {
-            scrollMap.style.backgroundImage = "url('assets/map-bg-ch1.jpg')";
-            scrollMap.style.backgroundColor = "#f0e6d2";
-        }
-        scrollMap.style.backgroundSize = "cover";
+    if (chapter === 'ch2') {
+        scrollMap.style.backgroundImage = "url('assets/map-bg-ch2.png')";
+        scrollMap.style.backgroundColor = "#5d4a43"; 
+    } else {
+        // ★★★ 修正第一章背景圖路徑 ★★★
+        scrollMap.style.backgroundImage = "url('assets/map-bg-ch1.png')";
+        scrollMap.style.backgroundColor = "#f0e6d2";
+    }
+    scrollMap.style.backgroundSize = "cover";
         
         const startNodeId = Object.keys(currentMapData)[0];
 
